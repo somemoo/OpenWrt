@@ -325,7 +325,7 @@ jobs:
     - name: 删除工作流运行记录  
       uses: Mattraks/delete-workflow-runs@main  
       with:  
-        token: ${{ REPO_TOKEN }}    
+        token: ${{ secrets.PAT }}    
         # 保留最近 2 天的记录  
         retain_days: 2                                
         # 保留至少 1 次运行记录  
