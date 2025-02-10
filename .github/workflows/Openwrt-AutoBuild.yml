@@ -233,7 +233,7 @@ jobs:
  
     # 上传固件到 Release  
     - name: 上传固件到 Release   
-      uses: softprops/action-gh-release@main  
+      uses: softprops/action-gh-release@v2  
       id: uprelease  
       continue-on-error: true
       if: ${{ env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && env.FIRMWARE_STATUS == 'true' }}
