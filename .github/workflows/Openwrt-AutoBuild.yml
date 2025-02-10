@@ -210,13 +210,14 @@ jobs:
           for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
           # 解压缩文件
           tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
+          mv sha256sums ${{matrix.target}}_sha256sums
           # 设置状态为 true  
           echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV                                   
           # 检查各类固件文件存在性并设置环境变量  
-          [ -n "$(find . -name '*image.iso' -print -quit)" ] && echo "ISO=true" >> $GITHUB_ENV  
-          [ -n "$(find . -name '*sysupgrade.bin' -print -quit)" ] && echo "BIN=true" >> $GITHUB_ENV  
-          [ -n "$(find . -name '*combined-efi.img.gz' -print -quit)" ] && echo "EFI=true" >> $GITHUB_ENV  
-          [ -n "$(find . -name '*combined.img.gz' -print -quit)" ] && echo "COMBINED=true" >> $GITHUB_ENV  
+          [ -n "$(find . -name '*iso*' -print -quit)" ] && echo "ISO=true" >> $GITHUB_ENV  
+          [ -n "$(find . -name '*bin*' -print -quit)" ] && echo "BIN=true" >> $GITHUB_ENV  
+          [ -n "$(find . -name '*efi*' -print -quit)" ] && echo "EFI=true" >> $GITHUB_ENV  
+          [ -n "$(find . -name '*squashfs*' -print -quit)" ] && echo "COMBINED=true" >> $GITHUB_ENV  
           # 列出文件以供调试  
           ls                                                                           
         else  
@@ -225,7 +226,7 @@ jobs:
  
     # 上传固件到 Release  
     - name: 上传固件到 Release   
-      uses: softprops/action-gh-release@v2  
+      uses: softprops/action-gh-release@main  
       id: uprelease  
       continue-on-error: true
       if: ${{ env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && env.FIRMWARE_STATUS == 'true' }}
@@ -256,7 +257,10 @@ jobs:
       if: ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true' && env.COMBINED == 'true' }}
       with:  
         name: ${{ env.date }}-${{matrix.target}}   
-        path: firmware/*combined.img.gz
+        path: |
+          firmware/*squashfs*
+          !firmware/*efi*
+          !firmware/*rootfs*
 
     # 上传 EFI 固到 Artifact  
     - name: 上传 EFI 固到 Artifact  
@@ -265,7 +269,7 @@ jobs:
       if: ${{ env.UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT == 'true' && env.EFI == 'true' }}  
       with:  
         name: ${{ env.date }}-${{matrix.target}}_EFI   
-        path: firmware/*combined-efi.img.gz    
+        path: firmware/*efi*    
 
     # 上传 BIN 固到 Artifact  
     - name: 上传 BIN 固到 Artifact  
@@ -274,7 +278,7 @@ jobs:
       if: ${{ env.UPLOAD_BIN_FIRMWARE_FOR_ARTIFACT == 'true' && env.BIN == 'true' }}  
       with:  
         name: ${{ env.date }}-${{matrix.target}}_BIN   
-        path: firmware/*sysupgrade.bin  
+        path: firmware/*bin*  
 
     # 上传 ISO 固件到 Artifact  
     - name: 上传 ISO 固件到 Artifact  
@@ -283,7 +287,7 @@ jobs:
       if: ${{ env.UPLOAD_ISO_FIRMWARE_FOR_ARTIFACT == 'true' && env.ISO == 'true' }}  
       with:  
         name: ${{ env.date }}-${{matrix.target}}_ISO  
-        path: firmware/*image.iso   
+        path: firmware/*iso*   
 
     # 上传make错误日志到 Artifact  
     - name: 上传错误日志到 Artifact  
