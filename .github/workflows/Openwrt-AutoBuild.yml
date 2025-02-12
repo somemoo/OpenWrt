@@ -215,7 +215,7 @@ jobs:
           echo "::endgroup::"  # 闭合多线程编译分组（成功时）
         fi  
         
-        # 收尾操作
+        # 空间使用情况
         echo "::group::📊 空间使用情况"  
         df -hT | grep -v tmpfs  
         echo "::endgroup::"  
