@@ -35,7 +35,7 @@ jobs:
     strategy:  
       fail-fast: false  
       matrix:  
-        target: [lede-x86-64,immortalwrt-x86-64]  
+        target: [openwrt-x86-64]  
         
     steps:  
     - name: 检出代码  
@@ -175,58 +175,57 @@ jobs:
         
         # 多线程编译分组
         echo "::group::📦 多线程编译 ${{ matrix.target }}"  
-        echo "线程数: $(($(nproc)+1))"
-        if make -j$(($(nproc)+1)) V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
+        echo "线程数: $(($(nproc)+1))"  
+        if make -j$(($(nproc)+1)) V=0 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
           echo "多线程编译成功！"  
+          echo "::endgroup::"  
         else  
           echo "多线程编译失败！"  
-          echo "::endgroup::"  # 闭合多线程编译分组
+          echo "::endgroup::"  # 闭合多线程分组  
           
-          # 多线程错误摘要分组
+          # 多线程错误摘要分组  
           echo "::group::📝 多线程错误摘要"  
-          echo "以下是最多50行错误摘要（完整日志见Artifacts）："
-          head -n 50 "$ERROR_LOG" | sed 's/^/   /'
-          echo "::endgroup::"  # 闭合多线程错误摘要分组
+          echo "以下是最多20行错误摘要（完整日志见Artifacts）："  
+          head -n 50 "$ERROR_LOG" | sed 's/^/   /'  
+          echo "::endgroup::"  
           
-          echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
+          echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."  
           
-          # 单线程编译分组
+          # 单线程编译分组  
           echo "::group::🐢 单线程编译 ${{ matrix.target }}"  
-          if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
-            echo "单线程编译成功！"
+          if make -j1 V=0 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
+            echo "单线程编译成功！"  
             rm -f "$ERROR_LOG"  
             echo "::notice::降级编译成功！"  
+            echo "::endgroup::"  
           else  
             echo "单线程编译失败！"  
-            echo "::endgroup::"  # 闭合单线程编译分组
+            echo "::endgroup::"  # 闭合单线程分组  
             
-            # 单线程错误摘要分组
+            # 单线程错误摘要分组  
             echo "::group::📝 单线程错误摘要"  
-            echo "以下是最多50行错误摘要（完整日志见Artifacts）："
-            tail -n 50 "$ERROR_LOG" | sed 's/^/   /'
-            echo "::endgroup::"  # 闭合单线程错误摘要分组
+            echo "以下是最多50行错误摘要（完整日志见Artifacts）："  
+            tail -n 20 "$ERROR_LOG" | sed 's/^/   /'  
+            echo "::endgroup::"  
             
-            echo "::error::❌ 彻底编译失败！最后10行错误:"
-            tail -n 10 "$ERROR_LOG" | sed 's/^/   /'
-            echo "BUILD_STATUS=failed" >> $GITHUB_ENV
+            echo "::error::❌ 彻底编译失败！最后10行错误："  
+            tail -n 10 "$ERROR_LOG" | sed 's/^/   /'  
+            echo "BUILD_STATUS=failed" >> $GITHUB_ENV  
           fi  
-          echo "::endgroup::"  # 闭合单线程编译分组
-        else  
-          echo "::endgroup::"  # 闭合多线程编译分组（成功时）
         fi  
         
-        # 空间使用情况
+        # 空间使用情况  
         echo "::group::📊 空间使用情况"  
         df -hT | grep -v tmpfs  
         echo "::endgroup::"  
-        
-        # 设置默认成功状态
-        if [ -z "${{ env.BUILD_STATUS }}" ]; then
-          echo "BUILD_STATUS=success" >> $GITHUB_ENV
+
+        # 设置默认成功状态  
+        if [ -z "${{ env.BUILD_STATUS }}" ]; then  
+          echo "BUILD_STATUS=success" >> $GITHUB_ENV  
           echo "::group::✅ 构建成果"  
           ls -lh bin/targets/*/*/ || true  
           echo "::endgroup::"  
-        fi
+        fi  
   
     # 组织文件  
     - name: 组织文件  
