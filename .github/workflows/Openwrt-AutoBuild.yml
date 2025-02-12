@@ -167,46 +167,60 @@ jobs:
     
     - name: 编译固件  
       id: compile  
-      continue-on-error: true
+      continue-on-error: true  
       run: |  
         set -eo pipefail  
         cd OpenWrt  
         ERROR_LOG="${{ matrix.target }}_make_error.log"
         
-        # 开始多线程编译分组
-        echo "::group::📦 编译 ${{ matrix.target }} (多线程)"  
+        # 多线程编译分组
+        echo "::group::📦 多线程编译 ${{ matrix.target }}"  
         echo "线程数: $(($(nproc)+1))"
         if make -j$(($(nproc)+1)) V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
-          echo "::endgroup::"  
+          echo "多线程编译成功！"  
         else  
-          echo "::endgroup::"  
+          echo "多线程编译失败！"  
+          echo "::endgroup::"  # 闭合多线程编译分组
+          
+          # 多线程错误摘要分组
+          echo "::group::📝 多线程错误摘要"  
+          echo "以下是最多50行错误摘要（完整日志见Artifacts）："
+          head -n 50 "$ERROR_LOG" | sed 's/^/   /'
+          echo "::endgroup::"  # 闭合多线程错误摘要分组
           
           echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
-          echo "::group::📝 错误摘要："
-          head -n 50 "$ERROR_LOG" | sed 's/^/   /'
-          echo "::endgroup::" 
           
-          # 开始新的单线程编译分组
-          echo "::group::🐢 单线程编译"  
+          # 单线程编译分组
+          echo "::group::🐢 单线程编译 ${{ matrix.target }}"  
           if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
-            echo "::endgroup::"  
+            echo "单线程编译成功！"
             rm -f "$ERROR_LOG"  
             echo "::notice::降级编译成功！"  
           else  
-            echo "::endgroup::"  
+            echo "单线程编译失败！"  
+            echo "::endgroup::"  # 闭合单线程编译分组
+            
+            # 单线程错误摘要分组
+            echo "::group::📝 单线程错误摘要"  
+            echo "以下是最多50行错误摘要（完整日志见Artifacts）："
+            tail -n 50 "$ERROR_LOG" | sed 's/^/   /'
+            echo "::endgroup::"  # 闭合单线程错误摘要分组
+            
             echo "::error::❌ 彻底编译失败！最后10行错误:"
-            echo "::group::📝 错误摘要："
             tail -n 10 "$ERROR_LOG" | sed 's/^/   /'
-            echo "::endgroup::"
             echo "BUILD_STATUS=failed" >> $GITHUB_ENV
           fi  
+          echo "::endgroup::"  # 闭合单线程编译分组
+        else  
+          echo "::endgroup::"  # 闭合多线程编译分组（成功时）
         fi  
         
+        # 收尾操作
         echo "::group::📊 空间使用情况"  
         df -hT | grep -v tmpfs  
         echo "::endgroup::"  
         
-        # 设置默认成功状态（如果未失败）
+        # 设置默认成功状态
         if [ -z "${{ env.BUILD_STATUS }}" ]; then
           echo "BUILD_STATUS=success" >> $GITHUB_ENV
           echo "::group::✅ 构建成果"  
