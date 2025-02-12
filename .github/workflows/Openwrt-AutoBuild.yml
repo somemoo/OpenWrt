@@ -170,15 +170,19 @@ jobs:
       run: |  
         set -eo pipefail  
         cd OpenWrt  
-        ERROR_LOG="${{ matrix.target }}_make_error.log"
+        ERROR_LOG="${{ matrix.target }}_make_error.log"  
         echo "::group::编译信息"  
         echo -e "使用 $(($(nproc)+1)) 线程编译 ${{ matrix.target }}......"  
-        if make -j$(($(nproc)+1)) V=s; then  
+        # 首次编译保存日志
+        if make -j$(($(nproc)+1)) V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
           echo "::endgroup::"  
         else  
           echo "::endgroup::"  
+          echo "首次编译失败，错误日志："
+          cat "$ERROR_LOG"
           echo "::group::降级为单线程编译"  
-          if make -j1 V=s 2> >(grep -v "warning" > "$ERROR_LOG"); then  
+          # 降级编译使用相同日志
+          if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
             echo "::endgroup::"  
             rm -f "$ERROR_LOG"  
             echo "::notice::降级为单线程编译成功！"  
@@ -195,19 +199,10 @@ jobs:
         df -h  
         echo "::endgroup::"  
         
-        if [ -f "$ERROR_LOG" ]; then  
-          echo "::error::⚠️ 发现残留错误日志，请检查构建流程！"  
-          echo "::group::${MATRIX_TARGET} 异常日志"  
-          cat "$ERROR_LOG"  
-          echo "::endgroup::"  
-          echo "BUILD_STATUS=failed" >> $GITHUB_ENV  
-          exit 1  
-        else  
-          echo "BUILD_STATUS=success" >> $GITHUB_ENV  
-          echo "::group::${MATRIX_TARGET} 构建成果"  
-          ls -lh bin/targets/*/*  
-          echo "::endgroup::"  
-        fi
+        echo "BUILD_STATUS=success" >> $GITHUB_ENV  
+        echo "::group::${{ matrix.target }} 构建成果"  
+        ls -lh bin/targets/*/*  
+        echo "::endgroup::"  
   
     # 组织文件  
     - name: 组织文件  
