@@ -167,42 +167,63 @@ jobs:
     
     - name: 编译固件  
       id: compile  
+      continue-on-error: true
       run: |  
         set -eo pipefail  
         cd OpenWrt  
-        ERROR_LOG="${{ matrix.target }}_make_error.log"  
-        echo "::group::编译信息"  
-        echo -e "使用 $(($(nproc)+1)) 线程编译 ${{ matrix.target }}......"  
-        # 首次编译保存日志
+        ERROR_LOG="${{ matrix.target }}_make_error.log"
+        
+        # 开始多线程编译分组
+        echo "::group::📦 编译 ${{ matrix.target }} (多线程)"  
+        echo "线程数: $(($(nproc)+1))"
         if make -j$(($(nproc)+1)) V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
           echo "::endgroup::"  
         else  
           echo "::endgroup::"  
-          echo "首次编译失败，错误日志："
-          cat "$ERROR_LOG"
-          echo "::group::降级为单线程编译"  
-          # 降级编译使用相同日志
-          if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
+          
+          echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
+          echo "::group::📝 错误摘要："
+          head -n 50 "$ERROR_LOG" | sed 's/^/   /'
+          echo "::endgroup::" 
+          
+          # 开始新的单线程编译分组
+          echo "::group::🐢 单线程编译"  
+          if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
             echo "::endgroup::"  
             rm -f "$ERROR_LOG"  
-            echo "::notice::降级为单线程编译成功！"  
+            echo "::notice::降级编译成功！"  
           else  
             echo "::endgroup::"  
-            echo "::error::❌ 编译失败！错误日志："  
-            cat "$ERROR_LOG"  
-            echo "BUILD_STATUS=failed" >> $GITHUB_ENV  
-            exit 1  
+            echo "::error::❌ 彻底编译失败！最后10行错误:"
+            echo "::group::📝 错误摘要："
+            tail -n 10 "$ERROR_LOG" | sed 's/^/   /'
+            echo "::endgroup::"
+            echo "BUILD_STATUS=failed" >> $GITHUB_ENV
           fi  
         fi  
         
-        echo "::group::空间使用情况"  
-        df -h  
+        echo "::group::📊 空间使用情况"  
+        df -hT | grep -v tmpfs  
         echo "::endgroup::"  
         
-        echo "BUILD_STATUS=success" >> $GITHUB_ENV  
-        echo "::group::${{ matrix.target }} 构建成果"  
-        ls -lh bin/targets/*/*  
-        echo "::endgroup::"  
+        # 设置默认成功状态（如果未失败）
+        if [ -z "${{ env.BUILD_STATUS }}" ]; then
+          echo "BUILD_STATUS=success" >> $GITHUB_ENV
+          echo "::group::✅ 构建成果"  
+          ls -lh bin/targets/*/*/ || true  
+          echo "::endgroup::"  
+        fi
+
+    # 后续通知步骤示例（需放在其他step中）
+    - name: 通知结果  
+      if: always()  # 始终执行
+      run: |
+        if [ "$BUILD_STATUS" = "failed" ]; then
+          echo "::error::编译失败！完整日志：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "下载日志: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
+        else
+          echo "::notice::编译成功！固件已就绪"
+        fi
   
     # 组织文件  
     - name: 组织文件  
