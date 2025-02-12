@@ -213,17 +213,6 @@ jobs:
           ls -lh bin/targets/*/*/ || true  
           echo "::endgroup::"  
         fi
-
-    # 后续通知步骤示例（需放在其他step中）
-    - name: 通知结果  
-      if: always()  # 始终执行
-      run: |
-        if [ "$BUILD_STATUS" = "failed" ]; then
-          echo "::error::编译失败！完整日志：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "下载日志: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
-        else
-          echo "::notice::编译成功！固件已就绪"
-        fi
   
     # 组织文件  
     - name: 组织文件  
