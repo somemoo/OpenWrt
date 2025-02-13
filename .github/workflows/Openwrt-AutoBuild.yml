@@ -35,7 +35,7 @@ jobs:
     strategy:  
       fail-fast: false  
       matrix:  
-        target: [lede-x86-64,immortalwrt-x86-64]  
+        target: [lede-x86-64,immortalwrt-x86-64,openwrt-x86-64]  
         
     steps:  
     - name: 检出代码  
@@ -342,32 +342,32 @@ jobs:
     # 微信通知  
     - name: 微信通知  
       # 如果已设置 SCKEY 则发送通知  
-      if: env.SCKEY                                   
+      if: env.SCKEY  
       run: |  
-        if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' || [ "${{ env.RELEASE }}" == 'true' ]; then  
-          curl -X "POST" \
-               --data-urlencode "title=固件${{ env.date }}-${{matrix.target}}编译完成😋!!!" \
-               --data-urlencode "key=${{ secrets.SCKEY }}" \
-               "https://sctapi.ftqq.com/key.send"
-        else
-          ERROR_LOG=$(tail -n 20 firmware/${{matrix.target}}_make_error.log)
-          curl -X "POST" \
-               --data-urlencode "title=固件${{ env.date }}-${{ matrix.target }}编译失败😭!!!" \
-               --data-urlencode "desp=$ERROR_LOG" \
-               --data-urlencode "key=${{ secrets.SCKEY }}" \
-               "https://sctapi.ftqq.com/key.send"
-        fi  
+        if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then  
+            curl -X POST \
+              --data-urlencode "key=${{ secrets.SCKEY }}" \
+              --data-urlencode "title=固件${{ env.date }}-${{matrix.target}}编译完成😋!!!" \
+              "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
+        else  
+            ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed ':a;N;$!ba;s/\n/%0a/g')
+            curl -X POST \
+              --data-urlencode "key=${{ secrets.SCKEY }}" \
+              --data-urlencode "title=固件${{ env.date }}-${{ matrix.target }}编译失败😭!!!" \
+              --data-urlencode "desp=${ERROR_LOG}" \
+              "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
+        fi
   
     # Telegram 通知  
     - name: Telegram 通知  
       # 如果已设置 Telegram 令牌则发送通知  
       if: env.TELEGRAM_TOKEN                          
       run: |  
-       if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' || [ "${{ env.RELEASE }}" == 'true' ]; then  
+       if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then  
          message="固件${{ env.date }}-${{ matrix.target }}编译完成😋"  
        else  
-         error_log=$(tail -n 20 firmware/${{matrix.target}}_make_error.log)  
-         message="固件${{ env.date }}-${{ matrix.target }}编译失败😭!!! 错误日志: $error_log"  
+         ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed ':a;N;$!ba;s/\n/%0a/g') 
+         message="固件${{ env.date }}-${{ matrix.target }}编译失败😭!!! 错误日志: $ERROR_LOG"  
        fi  
        curl -k --data "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" --data "text=${message}" "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"
    
