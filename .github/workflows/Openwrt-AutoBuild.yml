@@ -176,8 +176,9 @@ jobs:
         # 多线程编译分组
         echo "::group::📦 多线程编译 ${{ matrix.target }}"  
         echo "线程数: $(($(nproc)+1))"  
-        if make -j$(($(nproc)+1)) V=0 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
+        if make -j$(($(nproc)+1)) V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
           echo "多线程编译成功！"  
+          echo "BUILD_STATUS=success" >> $GITHUB_ENV
           echo "::endgroup::"  
         else  
           echo "多线程编译失败！"  
@@ -193,10 +194,11 @@ jobs:
           
           # 单线程编译分组  
           echo "::group::🐢 单线程编译 ${{ matrix.target }}"  
-          if make -j1 V=0 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
+          if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
             echo "单线程编译成功！"  
             rm -f "$ERROR_LOG"  
             echo "::notice::降级编译成功！"  
+            echo "BUILD_STATUS=success" >> $GITHUB_ENV
             echo "::endgroup::"  
           else  
             echo "单线程编译失败！"  
@@ -219,9 +221,8 @@ jobs:
         df -hT | grep -v tmpfs  
         echo "::endgroup::"  
 
-        # 设置默认成功状态  
-        if [ -z "${{ env.BUILD_STATUS }}" ]; then  
-          echo "BUILD_STATUS=success" >> $GITHUB_ENV  
+        # 列出生成文件  
+        if [ "$BUILD_STATUS" = "success" ]; then  
           echo "::group::✅ 构建成果"  
           ls -lh bin/targets/*/*/ || true  
           echo "::endgroup::"  
