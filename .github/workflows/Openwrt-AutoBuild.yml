@@ -345,17 +345,17 @@ jobs:
       if: env.SCKEY  
       run: |  
         if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then  
-            curl -X POST \
-              --data-urlencode "key=${{ secrets.SCKEY }}" \
-              --data-urlencode "title=固件${{ env.date }}-${{matrix.target}}编译完成😋!!!" \
-              "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
+          curl -X POST \
+            --data-urlencode "key=${{ secrets.SCKEY }}" \
+            --data-urlencode "title=固件${{ env.date }}-${{matrix.target}}编译完成😋!!!" \
+            "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
         else  
-            ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed ':a;N;$!ba;s/\n/%0a/g')
-            curl -X POST \
-              --data-urlencode "key=${{ secrets.SCKEY }}" \
-              --data-urlencode "title=固件${{ env.date }}-${{ matrix.target }}编译失败😭!!!" \
-              --data-urlencode "desp=${ERROR_LOG}" \
-              "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
+          ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed ':a;N;$!ba;s/\n/%0a/g')
+          curl -X POST \
+            --data-urlencode "key=${{ secrets.SCKEY }}" \
+            --data-urlencode "title=固件${{ env.date }}-${{ matrix.target }}编译失败😭!!!" \
+            --data-urlencode "desp=${ERROR_LOG}" \
+            "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
         fi
   
     # Telegram 通知  
