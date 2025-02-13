@@ -176,7 +176,7 @@ jobs:
         # 多线程编译分组
         echo "::group::📦 多线程编译 ${{ matrix.target }}"  
         echo "线程数: $(($(nproc)+1))"  
-        if make -j$(($(nproc)+1)) V=s 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
+        if make -j$(($(nproc)+1)) V=s > /dev/null 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
           echo "多线程编译成功！"  
           echo "BUILD_STATUS=success" >> $GITHUB_ENV
           echo "::endgroup::"  
@@ -194,7 +194,7 @@ jobs:
           
           # 单线程编译分组  
           echo "::group::🐢 单线程编译 ${{ matrix.target }}"  
-          if make -j1 V=s 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
+          if make -j1 V=s > /dev/null 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
             echo "单线程编译成功！"  
             rm -f "$ERROR_LOG"  
             echo "::notice::降级编译成功！"  
