@@ -172,11 +172,12 @@ jobs:
         set -eo pipefail  
         cd OpenWrt  
         ERROR_LOG="${{ matrix.target }}_make_error.log"
+        FULL_LOG="${{ matrix.target }}_full.log"
         
         # 多线程编译分组
         echo "::group::📦 多线程编译 ${{ matrix.target }}"  
         echo "线程数: $(($(nproc)+1))"  
-        if make -j$(($(nproc)+1)) V=s > /dev/null 2> >(grep -iE 'error|fatal|failed' > "$ERROR_LOG"); then  
+        if make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG" | grep -iE 'error|fatal|failed' > "$ERROR_LOG"; then  
           echo "多线程编译成功！"  
           echo "BUILD_STATUS=success" >> $GITHUB_ENV
           echo "::endgroup::"  
@@ -194,7 +195,7 @@ jobs:
           
           # 单线程编译分组  
           echo "::group::🐢 单线程编译 ${{ matrix.target }}"  
-          if make -j1 V=s > /dev/null 2> >(grep -iE 'error|fatal|failed' >> "$ERROR_LOG"); then  
+          if make -j1 V=s 2>&1 | tee "$FULL_LOG" | grep -iE 'error|fatal|failed' >> "$ERROR_LOG"; then  
             echo "单线程编译成功！"  
             rm -f "$ERROR_LOG"  
             echo "::notice::降级编译成功！"  
@@ -235,7 +236,7 @@ jobs:
       run: |  
         # 创建 firmware 目录（如果目录不存在）  
         mkdir -p firmware  
-         [ "${{ env.BUILD_STATUS }}" = "failed" ] && find OpenWrt/ -type f -name "*_error.log" -exec cp {} ./firmware/ \; 2>/dev/null
+         [ "${{ env.BUILD_STATUS }}" = "failed" ] && find OpenWrt/ -type f \( -name "*_full.log" -o -name "*_error.log" \) -exec cp {} ./firmware/ \; 2>/dev/null
         # 处理上传文件  
         if [ "${{ env.BUILD_STATUS }}" = "success" ]; then  
           find OpenWrt/bin/targets/ \( -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" \) -exec rm -rf {} + 2>/dev/null  
@@ -259,6 +260,7 @@ jobs:
           ls                                                                           
         else  
           [ -n "$(find . -name '*_error.log' -print -quit)" ] && echo "LOG=true" >> $GITHUB_ENV  
+          [ -n "$(find . -name '*_full.log' -print -quit)" ] && echo "FLOG=true" >> $GITHUB_ENV  
         fi
  
     # 上传固件到 Release  
@@ -330,12 +332,12 @@ jobs:
     - name: 上传错误日志到 Artifact  
       uses: actions/upload-artifact@v4  
       continue-on-error: true
-      if: ${{ env.LOG == 'true' }}  
+      if: ${{ env.FLOG == 'true' }}  
       with:  
         # 设置上传文件的名称  
-        name: ${{matrix.target}}_make_error           
+        name: ${{matrix.target}}_full_error           
         # 上传的错误日志文件路径  
-        path: firmware/*make_error.log                
+        path: firmware/*_full.log                
 
     # 微信通知  
     - name: 微信通知  
