@@ -35,7 +35,7 @@ jobs:
     strategy:  
       fail-fast: false  
       matrix:  
-        target: [openwrt-x86-64]  
+        target: [lede-x86-64,immortalwrt-x86-64]  
         
     steps:  
     - name: 检出代码  
@@ -187,7 +187,7 @@ jobs:
           
           # 多线程错误摘要分组  
           echo "::group::📝 多线程错误摘要"  
-          echo "以下是最多20行错误摘要（完整日志见Artifacts）："  
+          echo "以下是最多50行错误摘要（完整日志见Artifacts）："  
           head -n 50 "$ERROR_LOG" | sed 's/^/   /'  
           echo "::endgroup::"  
           
@@ -197,7 +197,7 @@ jobs:
           echo "::group::🐢 单线程编译 ${{ matrix.target }}"  
           if make -j1 V=s 2>&1 | tee "$FULL_LOG" | grep -iE 'error|fatal|failed' >> "$ERROR_LOG"; then  
             echo "单线程编译成功！"  
-            rm -f "$ERROR_LOG"  
+            rm -f "$FULL_LOG" "$ERROR_LOG"  
             echo "::notice::降级编译成功！"  
             echo "BUILD_STATUS=success" >> $GITHUB_ENV
             echo "::endgroup::"  
@@ -208,11 +208,11 @@ jobs:
             # 单线程错误摘要分组  
             echo "::group::📝 单线程错误摘要"  
             echo "以下是最多50行错误摘要（完整日志见Artifacts）："  
-            tail -n 20 "$ERROR_LOG" | sed 's/^/   /'  
+            tail -n 50 "$ERROR_LOG" | sed 's/^/   /'  
             echo "::endgroup::"  
             
-            echo "::error::❌ 彻底编译失败！最后10行错误："  
-            tail -n 10 "$ERROR_LOG" | sed 's/^/   /'  
+            echo "::error::❌ 彻底编译失败！最后20行错误："  
+            tail -n 20 "$ERROR_LOG" | sed 's/^/   /'  
             echo "BUILD_STATUS=failed" >> $GITHUB_ENV  
           fi  
         fi  
@@ -259,8 +259,8 @@ jobs:
           # 列出文件以供调试  
           ls                                                                           
         else  
-          [ -n "$(find . -name '*_error.log' -print -quit)" ] && echo "LOG=true" >> $GITHUB_ENV  
-          [ -n "$(find . -name '*_full.log' -print -quit)" ] && echo "FLOG=true" >> $GITHUB_ENV  
+          [ -n "$(find . -name '*_full.log' -print -quit)" ] && echo "LOG=true" >> $GITHUB_ENV  
+          ls
         fi
  
     # 上传固件到 Release  
@@ -332,7 +332,7 @@ jobs:
     - name: 上传错误日志到 Artifact  
       uses: actions/upload-artifact@v4  
       continue-on-error: true
-      if: ${{ env.FLOG == 'true' }}  
+      if: ${{ env.LOG == 'true' }}  
       with:  
         # 设置上传文件的名称  
         name: ${{matrix.target}}_full_error           
@@ -344,11 +344,18 @@ jobs:
       # 如果已设置 SCKEY 则发送通知  
       if: env.SCKEY                                   
       run: |  
-        if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' || "${{ env.RELEASE }}" == 'true' ]; then  
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=固件${{ env.date }}-${{matrix.target}}编译完成😋  
-        else  
-          error_log=$(tail -n 20 firmware/${{matrix.target}}_make_error.log)  
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=固件${{ env.date }}-${{matrix.target}}编译失败😭!!! 错误日志: $error_log  
+        if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' || [ "${{ env.RELEASE }}" == 'true' ]; then  
+          curl -X "POST" \
+               --data-urlencode "title=固件${{ env.date }}-${{matrix.target}}编译完成😋!!!" \
+               --data-urlencode "key=${{ secrets.SCKEY }}" \
+               "https://sctapi.ftqq.com/key.send"
+        else
+          ERROR_LOG=$(tail -n 20 firmware/${{matrix.target}}_make_error.log)
+          curl -X "POST" \
+               --data-urlencode "title=固件${{ env.date }}-${{ matrix.target }}编译失败😭!!!" \
+               --data-urlencode "desp=$ERROR_LOG" \
+               --data-urlencode "key=${{ secrets.SCKEY }}" \
+               "https://sctapi.ftqq.com/key.send"
         fi  
   
     # Telegram 通知  
@@ -356,7 +363,7 @@ jobs:
       # 如果已设置 Telegram 令牌则发送通知  
       if: env.TELEGRAM_TOKEN                          
       run: |  
-       if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' || "${{ env.RELEASE }}" == 'true' ]; then  
+       if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' || [ "${{ env.RELEASE }}" == 'true' ]; then  
          message="固件${{ env.date }}-${{ matrix.target }}编译完成😋"  
        else  
          error_log=$(tail -n 20 firmware/${{matrix.target}}_make_error.log)  
