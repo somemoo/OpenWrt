@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
         with:
           fetch-depth: 0
 
@@ -221,7 +221,7 @@ jobs:
           fi
 
       - name: 上传固件到 Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@master
         id: uprelease
         continue-on-error: true
         if: ${{ env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && env.FIRMWARE_STATUS == 'true' }}
@@ -311,14 +311,14 @@ jobs:
           fi
 
       - name: 删除工作流运行记录
-        uses: Mattraks/delete-workflow-runs@v2
+        uses: Mattraks/delete-workflow-runs@main
         with:
           token: ${{ secrets.PAT }}
           retain_days: 2
           keep_minimum_runs: 1
 
       - name: 删除旧的 Releases
-        uses: dev-drprasad/delete-older-releases@v2
+        uses: dev-drprasad/delete-older-releases@master
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' }}
         with:
