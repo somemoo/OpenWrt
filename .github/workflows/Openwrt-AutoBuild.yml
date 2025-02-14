@@ -189,7 +189,7 @@ jobs:
             df -hT | grep -v tmpfs
             echo "::endgroup::"
             echo "::group::✅ 构建成果"
-            ls -lh bin/targets/*/*/ || true
+            ls -lh bin/targets/*/* || true
             echo "::endgroup::"
           fi
 
