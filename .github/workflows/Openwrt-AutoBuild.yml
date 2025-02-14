@@ -1,3 +1,10 @@
+#=================================================  
+# https://github.com/somemoo/OpenWrt  
+# 描述: 使用 GitHub Actions 构建 OpenWrt  
+# 许可证: MIT  
+# 作者: vison.v   
+#=================================================  
+
 name: Openwrt-AutoBuild
 
 on:
