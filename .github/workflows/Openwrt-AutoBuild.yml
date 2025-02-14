@@ -183,10 +183,10 @@ jobs:
               echo "BUILD_STATUS=failed" >> $GITHUB_ENV
             fi
           fi
-          echo "::group::📊 空间使用情况"
-          df -hT | grep -v tmpfs
-          echo "::endgroup::"
           if [ "$BUILD_STATUS" = "success" ]; then
+            echo "::group::📊 空间使用情况"
+            df -hT | grep -v tmpfs
+            echo "::endgroup::"
             echo "::group::✅ 构建成果"
             ls -lh bin/targets/*/*/ || true
             echo "::endgroup::"
