@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: 检出代码
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -75,12 +75,12 @@ jobs:
           sudo apt update
           sudo apt full-upgrade -y
           sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-          bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
-          git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev \
-          libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev \
-          libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf npm python3 \
-          python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo \
-          uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+            bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
+            git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev \
+            libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev \
+            libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf npm python3 \
+            python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo \
+            uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
           sudo apt -y autoremove --purge
           sudo apt -y clean
           git clone --depth=1 https://github.com/openwrt-dev/po2lmo
@@ -104,14 +104,12 @@ jobs:
           ./scripts/feeds install -a
 
       - name: 优化存储空间
-        env:
-          DEBIAN_FRONTEND: noninteractive
         run: |
           sudo mkdir -p -m 777 /mnt/OpenWrt/dl /mnt/OpenWrt/bin /mnt/OpenWrt/staging_dir /mnt/OpenWrt/build_dir
-          ln -sf /mnt/OpenWrt/dl OpenWrt/dl
-          ln -sf /mnt/OpenWrt/bin OpenWrt/bin
-          ln -sf /mnt/OpenWrt/staging_dir OpenWrt/staging_dir
-          ln -sf /mnt/OpenWrt/build_dir OpenWrt/build_dir
+          ln -sfn /mnt/OpenWrt/dl OpenWrt/dl
+          ln -sfn /mnt/OpenWrt/bin OpenWrt/bin
+          ln -sfn /mnt/OpenWrt/staging_dir OpenWrt/staging_dir
+          ln -sfn /mnt/OpenWrt/build_dir OpenWrt/build_dir
 
       - name: 应用配置
         run: |
@@ -198,15 +196,18 @@ jobs:
         id: organize
         run: |
           mkdir -p firmware
-          [ "${{ env.BUILD_STATUS }}" = "failed" ] && find OpenWrt/ -type f $$ -name "*_full.log" -o -name "*_error.log" $$ -exec cp {} ./firmware/ \; 2>/dev/null
+          if [ "${{ env.BUILD_STATUS }}" = "failed" ]; then
+            find OpenWrt/ -type f -name "*_full.log" -o -name "*_error.log" -exec cp {} ./firmware/ \; 2>/dev/null
+          fi
           if [ "${{ env.BUILD_STATUS }}" = "success" ]; then
-            find OpenWrt/bin/targets/ $$ -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" $$ -exec rm -rf {} + 2>/dev/null
+            find OpenWrt/bin/targets/ -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" -exec rm -rf {} + 2>/dev/null
             find OpenWrt/bin/targets/ -type f -exec cp -f {} ./firmware/ \; 2>/dev/null
             cp OpenWrt/.config ./firmware/${{ matrix.target }}.config
             cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware
             cd firmware
-            for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
-            tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{ matrix.target }}.config.tar.gz && rm -f {sha256sums.tar.gz, release.tar.gz, ${{ matrix.target }}.config.tar.gz}
+            find . -maxdepth 1 -type f ! -name "*.tar.gz" -exec sh -c 'tar -czf "$1.tar.gz" "$1" && rm -f "$1"' _ {} \;
+            tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{ matrix.target }}.config.tar.gz 
+            rm -f {sha256sums.tar.gz, release.tar.gz, ${{ matrix.target }}.config.tar.gz}
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
             [ -n "$(find . -name '*iso*' -print -quit)" ] && echo "ISO=true" >> $GITHUB_ENV
@@ -220,7 +221,7 @@ jobs:
           fi
 
       - name: 上传固件到 Release
-        uses: softprops/action-gh-release@master
+        uses: softprops/action-gh-release@v1
         id: uprelease
         continue-on-error: true
         if: ${{ env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && env.FIRMWARE_STATUS == 'true' }}
@@ -301,7 +302,7 @@ jobs:
               "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"
           fi
           if [ -n "$TELEGRAM_TOKEN" ]; then
-            curl -k \
+            curl -s -k \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
               --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${MSG_CONTENT}" \
               --data-urlencode "parse_mode=HTML" \
@@ -310,14 +311,14 @@ jobs:
           fi
 
       - name: 删除工作流运行记录
-        uses: Mattraks/delete-workflow-runs@main
+        uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT }}
           retain_days: 2
           keep_minimum_runs: 1
 
       - name: 删除旧的 Releases
-        uses: dev-drprasad/delete-older-releases@master
+        uses: dev-drprasad/delete-older-releases@v2
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' }}
         with:
