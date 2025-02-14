@@ -339,37 +339,39 @@ jobs:
         # 上传的错误日志文件路径  
         path: firmware/*_full.log                
 
-    # 微信通知  
-    - name: 微信通知  
-      # 如果已设置 SCKEY 则发送通知  
-      if: env.SCKEY  
-      run: |  
-        if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then  
-          curl -X POST \
-            --data-urlencode "key=${{ secrets.SCKEY }}" \
-            --data-urlencode "title=固件${{ env.date }}-${{matrix.target}}编译完成😋!!!" \
-            "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
-        else  
-          ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed ':a;N;$!ba;s/\n/%0a/g')
-          curl -X POST \
-            --data-urlencode "key=${{ secrets.SCKEY }}" \
-            --data-urlencode "title=固件${{ env.date }}-${{ matrix.target }}编译失败😭!!!" \
-            --data-urlencode "desp=${ERROR_LOG}" \
-            "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
+    # 合并通知
+    - name: 消息通知
+      run: |
+        # 构造基础消息
+        if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then
+          MSG_TITLE="✅ 固件 ${{ env.date }}-${{ matrix.target }} 编译完成"
+          MSG_CONTENT="<b>🎉 编译成功！</b>%0A%0A📅 日期：${{ env.date }}%0A🔧 目标：${{ matrix.target }}%0A🚀 已上传到 Release"
+          WX_CONTENT="固件${{ env.date }}-${{matrix.target}}编译完成😋!!!"
+        else
+          ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')
+          MSG_TITLE="❌ 固件 ${{ env.date }}-${{ matrix.target }} 编译失败"
+          MSG_CONTENT="<b>⚠️ 编译失败！</b>%0A%0A🔧 目标：${{ matrix.target }}%0A%0A<pre>错误日志：%0A${ERROR_LOG}</pre>%0A%0A查看完整日志请下载Artifacts"
+          WX_CONTENT="固件${{ env.date }}-${{ matrix.target }}编译失败😭!!! 错误日志: ${ERROR_LOG}"
         fi
-  
-    # Telegram 通知  
-    - name: Telegram 通知  
-      # 如果已设置 Telegram 令牌则发送通知  
-      if: env.TELEGRAM_TOKEN                          
-      run: |  
-       if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then  
-         message="固件${{ env.date }}-${{ matrix.target }}编译完成😋"  
-       else  
-         ERROR_LOG=$(tail -n 10 firmware/${{matrix.target}}_make_error.log | sed ':a;N;$!ba;s/\n/%0a/g') 
-         message="固件${{ env.date }}-${{ matrix.target }}编译失败😭!!! 错误日志: $ERROR_LOG"  
-       fi  
-       curl -k --data "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" --data "text=${message}" "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"
+
+        # 微信通知
+        if [ -n "$SCKEY" ]; then
+          curl -X POST \
+            --data-urlencode "key=${{ secrets.SCKEY }}" \
+            --data-urlencode "title=${MSG_TITLE}" \
+            --data-urlencode "desp=${WX_CONTENT}" \
+            "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"
+        fi
+
+        # Telegram通知（HTML格式）
+        if [ -n "$TELEGRAM_TOKEN" ]; then
+          curl -k \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${MSG_CONTENT}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"
+        fi
    
     # 删除工作流运行记录  
     - name: 删除工作流运行记录  
