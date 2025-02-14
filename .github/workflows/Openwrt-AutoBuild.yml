@@ -90,12 +90,11 @@ jobs:
       - name: 克隆源代码
         run: |
           git clone --depth 1 $REPO_URL -b $REPO_BRANCH OpenWrt
+          rsync -a ${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/files/ OpenWrt/ 2>/dev/null || :
+          cp -rf ${{ env.REPO_NAME }} OpenWrt/
 
       - name: 加载与更新 feeds
         run: |
-          [ -n "$(ls -A "${{ env.REPO_NAME }}/common/files/" 2>/dev/null)" ] && cp -rf "${{ env.REPO_NAME }}/common/files/"* OpenWrt/
-          [ -n "$(ls -A "${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/files/" 2>/dev/null)" ] && cp -rf "${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/files/"* OpenWrt/
-          cp -rf ${{ env.REPO_NAME }} OpenWrt/
           cd OpenWrt
           sed -i "/src-git vi /d; \$a src-git vi https://github.com/somemoo/OpenWrt-packages;${{ env.REPO_NAME }}" feeds.conf.default
           ./scripts/feeds update -a
@@ -104,7 +103,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: 清理磁盘空间
+      - name: 优化存储空间
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -114,7 +113,7 @@ jobs:
           ln -sf /mnt/OpenWrt/staging_dir OpenWrt/staging_dir
           ln -sf /mnt/OpenWrt/build_dir OpenWrt/build_dir
 
-      - name: 加载自定义配置
+      - name: 应用配置
         run: |
           cd OpenWrt
           if [ -f "${{ env.REPO_NAME }}/common/$COMMON_SH" ]; then
@@ -134,19 +133,14 @@ jobs:
       - name: 应用补丁
         run: |
           cd OpenWrt
-          if [ -n "$(ls -A "${{ env.REPO_NAME }}/common/patches" 2>/dev/null)" ]; then
-            find "${{ env.REPO_NAME }}/common/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
-          fi
-          if [ -n "$(ls -A "${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/patches" 2>/dev/null)" ]; then
-            find "${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%' | patch -d './' -B --merge -p1 --forward"
-          fi
+          find ${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/patches -name "*.patch" 2>/dev/null | \
+            xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
 
-      - name: 下载软件包
-        id: package
+      - name: 下载依赖
         run: |
           cd OpenWrt
           make defconfig
-          make download -j16
+          make download -j$(nproc)
           df -h
 
       - name: 编译固件
@@ -168,7 +162,7 @@ jobs:
             echo "::endgroup::"
             echo "::group::📝 多线程错误摘要"
             echo "以下是最多50行错误摘要（完整日志见Artifacts）："
-            head -n 50 "$ERROR_LOG" | sed 's/^/   /'
+            tail -n 50 "$FULL_LOG" | sed 's/^/   /'
             echo "::endgroup::"
             echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
             echo "::group::🐢 单线程编译 ${{ matrix.target }}"
@@ -183,10 +177,10 @@ jobs:
               echo "::endgroup::"
               echo "::group::📝 单线程错误摘要"
               echo "以下是最多50行错误摘要（完整日志见Artifacts）："
-              tail -n 50 "$ERROR_LOG" | sed 's/^/   /'
+              tail -n 50 "$FULL_LOG" | sed 's/^/   /'
               echo "::endgroup::"
               echo "::error::❌ 彻底编译失败！最后10行错误："
-              tail -n 10 "$ERROR_LOG" | sed 's/^/   /'
+              tail -n 10 "$FULL_LOG" | sed 's/^/   /'
               echo "BUILD_STATUS=failed" >> $GITHUB_ENV
             fi
           fi
