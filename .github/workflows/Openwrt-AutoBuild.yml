@@ -211,8 +211,8 @@ jobs:
             tail -n 50 "$ERROR_LOG" | sed 's/^/   /'  
             echo "::endgroup::"  
             
-            echo "::error::❌ 彻底编译失败！最后20行错误："  
-            tail -n 20 "$ERROR_LOG" | sed 's/^/   /'  
+            echo "::error::❌ 彻底编译失败！最后10行错误："  
+            tail -n 10 "$ERROR_LOG" | sed 's/^/   /'  
             echo "BUILD_STATUS=failed" >> $GITHUB_ENV  
           fi  
         fi  
