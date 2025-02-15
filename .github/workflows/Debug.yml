@@ -49,9 +49,9 @@ jobs:
           if [ "$LOG" = "true" ]; then  
             MSG_TITLE="❌ 固件编译失败"  
             MSG_CONTENT="<b>⚠️ 编译失败！</b>  
-            🔧 目标：测试  
-            <pre>📝错误日志：日志</pre>  
-            📝查看完整日志请下载Artifacts"  
+             🔧 目标：测试  
+             <pre>📝错误日志：日志</pre>  
+             📝查看完整日志请下载Artifacts"  
           else  
             MSG_TITLE="✅ 固件编译完成"  
             MSG_CONTENT="<b>🎉 编译成功！</b>    
@@ -71,7 +71,7 @@ jobs:
           if [ -n "$TELEGRAM_TOKEN" ]; then  
             curl -s -k \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              --data-urlencode "text=# ${MSG_TITLE}  
+              --data-urlencode "text=<b>${MSG_TITLE}</b>  
               
               ${MSG_CONTENT}" \
               --data-urlencode "parse_mode=HTML" \
