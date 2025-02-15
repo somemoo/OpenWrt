@@ -71,7 +71,8 @@ jobs:
           if [ -n "$TELEGRAM_TOKEN" ]; then  
             curl -s -k \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              --data-urlencode "text=<b>${MSG_TITLE}</b>  
+              --data-urlencode "text=# ${MSG_TITLE}  
+              
               ${MSG_CONTENT}" \
               --data-urlencode "parse_mode=HTML" \
               --data-urlencode "disable_web_page_preview=true" \
