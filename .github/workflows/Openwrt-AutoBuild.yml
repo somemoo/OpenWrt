@@ -148,7 +148,7 @@ jobs:
           FULL_LOG="${{ matrix.target }}_full.log"
           echo "::group::📦 多线程编译 ${{ matrix.target }}"
           echo "线程数: $(($(nproc)+1))"
-          if { make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG"; } | grep -iE 'error:|Collected errors:|Cannot install package|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
+          if { make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG"; } | grep -E 'error:|Collected errors:|Cannot install package|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
             echo "多线程编译成功！"
             rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
             echo "::endgroup::"
