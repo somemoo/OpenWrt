@@ -50,11 +50,12 @@ jobs:
             MSG_TITLE="❌ 固件编译失败"  
             MSG_CONTENT="<b>-----------------------</b>  
             📝目标：测试  
-            <pre>📝错误日志：日志</pre>  
+            <pre>📝错误日志：  
+            日志</pre>  
             📝查看完整日志请下载Artifacts"  
           else  
             MSG_TITLE="✅ 固件编译完成"  
-            MSG_CONTENT="<b>🎉 编译成功！</b>    
+            MSG_CONTENT="<b>-----------------------</b>    
             📅 日期：$(date +'%Y-%m-%d')    
             🔧 目标：测试    
             🚀 已上传到 Release"  
