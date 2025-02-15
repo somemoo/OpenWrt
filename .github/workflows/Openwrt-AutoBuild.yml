@@ -161,7 +161,7 @@ jobs:
             echo "::endgroup::"
             echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
             echo "::group::🐢 单线程编译 ${{ matrix.target }}"
-            if { make -j1 V=s 2>&1 | tee "$FULL_LOG"; } | grep -iE 'error:|Collected errors:|Cannot install package|check_data_file_clashes|^\* ' >> "$ERROR_LOG"; then
+            if { make -j1 V=s 2>&1 | tee "$FULL_LOG"; } | grep -E 'error:|Collected errors:|Cannot install package|check_data_file_clashes|^\* ' >> "$ERROR_LOG"; then
               echo "单线程编译成功！"
               rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
               echo "::notice::降级编译成功！"
@@ -178,10 +178,10 @@ jobs:
           fi
           if [ ! -e "$FULL_LOG" ]; then
             echo "::group::📊 空间使用情况"
-            df -hT | grep -v tmpfs
+            df -hT | grep -v 'tmpfs\|boot'
             echo "::endgroup::"
             echo "::group::✅ 构建成果"
-            ls -lh bin/targets/*/* || true
+            ls -h bin/targets/*/* || true
             echo "::endgroup::"
           else
             echo "LOG=true" >> $GITHUB_ENV
@@ -196,16 +196,13 @@ jobs:
             find OpenWrt/ -type f -name "*_full.log" -o -name "*_error.log" -exec cp {} ./firmware/ \; 2>/dev/null || true
             ls firmware
           else
-            find OpenWrt/bin/targets/ -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" -exec rm -rf {} + 2>/dev/null
-            find OpenWrt/bin/targets/ -type f -exec cp -f {} ./firmware/ \; 2>/dev/null
-            cp OpenWrt/.config  ./firmware/${{ matrix.target }}.config
-            cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware
-            cd firmware
-            for file in *; do 
-              [ -f "$file" ] && tar -czf "$file.tar.gz" "$file" && rm -f "$file"
-            done
-            tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{ matrix.target }}.config.tar.gz
-            rm -f {sha256sums.tar.gz,release.tar.gz,${{ matrix.target }}.config.tar.gz}
+            find OpenWrt/bin/targets/ \( -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" \) -exec rm -rf {} + 2>/dev/null  
+            find OpenWrt/bin/targets/ -type f -exec cp -f {} ./firmware/ \; 2>/dev/null  
+            cp OpenWrt/.config  ./firmware/${{matrix.target}}.config  
+            cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware    
+            cd firmware  
+            for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
+            tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
             [ -e "*efi*" ] && echo "EFI=true" >> $GITHUB_ENV
