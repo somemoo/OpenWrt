@@ -49,9 +49,9 @@ jobs:
           if [ "$LOG" = "true" ]; then  
             MSG_TITLE="❌ 固件编译失败"  
             MSG_CONTENT="<b>⚠️ 编译失败！</b>  
-            &nbsp 🔧 目标：测试  
-             <pre>📝错误日志：日志</pre>  
-             📝查看完整日志请下载Artifacts"  
+            📝🔧 目标：测试  
+            <pre>📝错误日志：日志</pre>  
+            📝查看完整日志请下载Artifacts"  
           else  
             MSG_TITLE="✅ 固件编译完成"  
             MSG_CONTENT="<b>🎉 编译成功！</b>    
