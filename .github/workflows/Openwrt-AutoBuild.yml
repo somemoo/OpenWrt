@@ -206,8 +206,8 @@ jobs:
             mv sha256sums ${{ matrix.target }}_sha256sums
             [ "$REPO_NAME" = "lede" ] && rename 's/openwrt/$REPO_NAME/' openwrt-*
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
-            [ -e "*efi*" ] && echo "EFI=true" >> $GITHUB_ENV
-            [ -e "*squashfs*" ] && echo "COMBINED=true" >> $GITHUB_ENV
+            compgen -G "*efi*" > /dev/null && echo "EFI=true" >> $GITHUB_ENV
+            compgen -G "*squashfs*" > /dev/null && echo "COMBINED=true" >> $GITHUB_ENV
             ls
           fi
 
