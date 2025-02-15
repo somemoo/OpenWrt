@@ -268,7 +268,7 @@ jobs:
             MSG_CONTENT="---------------------------------------  
             📅日期：${{ env.date }}  
             🔧目标：${{ matrix.target }}  
-            🚀已上传到 Release"
+            📥下载地址：[${{ matrix.target }}-generic-squashfs-combined.img.tar.gz](https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz)"
           fi
 
           if [ -n "$SCKEY" ]; then
