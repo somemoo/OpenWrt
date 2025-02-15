@@ -37,7 +37,10 @@ jobs:
       - name: 检出代码  
         uses: actions/checkout@v2  # Updated to a stable version  
         with:  
-          fetch-depth: 0   
+          fetch-depth: 0  
+
+      - name: SSH connection to Actions  
+        uses: kiddin9/debugger-action@master  
 
       - name: 定义环境  
         if: always()  
@@ -48,24 +51,32 @@ jobs:
         run: |  
           if [ "$LOG" = "true" ]; then  
             MSG_TITLE="❌ 固件编译失败"  
-            MSG_CONTENT="<b>⚠️ 编译失败！</b>%0A%0A🔧 目标：测试%0A%0A<pre>错误日志：%0A日志</pre>%0A%0A查看完整日志请下载Artifacts"  
+            MSG_CONTENT="<b>⚠️ 编译失败！</b>  \  
+            🔧 目标：测试  \  
+           <pre>错误日志：  \  
+           日志</pre>  \  
+           查看完整日志请下载Artifacts"  
           else  
             MSG_TITLE="✅ 固件编译完成"  
-            MSG_CONTENT="<b>🎉 编译成功！</b>%0A%0A📅 日期：$(date +'%Y-%m-%d')%0A🔧 目标：测试%0A🚀 已上传到 Release"  
+            MSG_CONTENT="<b>🎉 编译成功！</b>  \  
+            📅 日期：$(date +'%Y-%m-%d')  \  
+            🔧 目标：测试  \  
+            🚀 已上传到 Release"  
           fi  
           
           if [ -n "$SCKEYD" ]; then  
             curl -X POST \
               --data-urlencode "key=${{ secrets.SCKEY }}" \
               --data-urlencode "title=${MSG_TITLE}" \
-              --data-urlencode "desp=${MSG_CONTENT//\n/%0A}" \  # 将换行符转换为 URL 编码  
+              --data-urlencode "desp=${MSG_CONTENT}" \
               "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
           fi  
           
           if [ -n "$TELEGRAM_TOKEN" ]; then  
             curl -s -k \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${MSG_CONTENT}" \
+              --data-urlencode "text=<b>${MSG_TITLE}</b>  \  
+${MSG_CONTENT}" \
               --data-urlencode "parse_mode=HTML" \
               --data-urlencode "disable_web_page_preview=true" \
               "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"  
