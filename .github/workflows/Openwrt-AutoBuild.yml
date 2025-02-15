@@ -193,7 +193,7 @@ jobs:
         run: |
           mkdir -p firmware
           if [ "$LOG" = "true" ]; then
-            find OpenWrt/ -type f -name "*_full.log" -o -name "*_error.log" -exec cp {} ./firmware/ \; 2>/dev/null || true
+            find OpenWrt/ \( -type f -name "*_full.log" -o -name "*_error.log"\) -exec cp {} ./firmware/ \; 2>/dev/null || true
             ls firmware
           else
             find OpenWrt/bin/targets/ \( -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" \) -exec rm -rf {} + 2>/dev/null  
@@ -240,7 +240,9 @@ jobs:
         if: ${{ env.UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT == 'true' && env.EFI == 'true' }}
         with:
           name: ${{ env.date }}-${{ matrix.target }}_EFI
-          path: firmware/*efi*
+          path: |
+            firmware/*efi*
+            !firmware/*ext4*
 
       - name: 错误日志
         uses: actions/upload-artifact@v4
