@@ -1,0 +1,75 @@
+#=================================================  
+# https://github.com/P3TERX/Actions-OpenWrt  
+# 描述: 使用 GitHub Actions 构建 OpenWrt  
+# 许可证: MIT  
+# 作者: P3TERX  
+# 博客: https://p3terx.com  
+#=================================================  
+
+name: Debug  
+
+on:   
+  workflow_dispatch:  
+  #schedule:  
+  #  - cron: "5 23 1/2 * *"  
+
+permissions:  
+  contents: read  
+
+env:  
+  REPO_TOKEN: ${{ secrets.REPO_TOKEN }}  
+  SCKEY: ${{ secrets.SCKEY }}  
+  PAT: ${{ secrets.PAT }}  
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}  
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  
+  TZ: Asia/Shanghai  
+
+jobs:  
+  build_openwrt:  
+    if: github.event.repository.owner.id == github.event.sender.id || ! github.event.sender.id  
+    runs-on: ubuntu-latest  
+    
+    name: Debug测试   
+    strategy:  
+      fail-fast: false  
+        
+    steps:  
+    - name: 检出代码  
+      uses: actions/checkout@v2  # Updated to a stable version  
+      with:  
+          fetch-depth: 0  
+
+    - name: SSH connection to Actions  
+      uses: kiddin9/debugger-action@master  
+
+    - name: 定义环境  
+      if: always()  
+      run: echo "LOG=true" >> $GITHUB_ENV  
+
+    - name: 消息通知  
+      if: always()  
+      run: |  
+        if [ "$LOG" = "true" ]; then  
+          MSG_TITLE="❌ 固件编译失败"  
+          MSG_CONTENT="<b>⚠️ 编译失败！</b>%0A%0A🔧 目标：测试%0A%0A<pre>错误日志：%0A日志</pre>%0A%0A查看完整日志请下载Artifacts"  
+        else  
+          MSG_TITLE="✅ 固件编译完成"  
+          MSG_CONTENT="<b>🎉 编译成功！</b>%0A%0A📅 日期：$(date +'%Y-%m-%d')%0A🔧 目标：测试%0A🚀 已上传到 Release"  
+        fi  
+
+        if [ -n "$SCKEYD" ]; then  
+          curl -X POST \
+            --data-urlencode "key=${{ secrets.SCKEY }}" \
+            --data-urlencode "title=${MSG_TITLE}" \
+            --data-urlencode "desp=${MSG_CONTENT}" \
+            "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
+        fi  
+
+        if [ -n "$TELEGRAM_TOKEN" ]; then  
+          curl -s -k \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${MSG_CONTENT}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"  
+        fi
