@@ -47,7 +47,6 @@ jobs:
           echo "REPO_NAME=$(basename "${{ matrix.target }}" | awk -F'-' '{print $1}')" >> $GITHUB_ENV
           echo "ARCH_NAME=$(basename "${{ matrix.target }}" | sed -E 's/^[^-]*-//')" >> $GITHUB_ENV
           echo "date=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
-          echo "date1=$(date +"%m.%d")" >> $GITHUB_ENV
 
       - name: 加载配置
         run: |
@@ -215,7 +214,7 @@ jobs:
             ls
           fi
 
-      - name: 上传固件到 Release
+      - name: 发布固件
         uses: softprops/action-gh-release@master
         id: uprelease
         continue-on-error: true
@@ -228,7 +227,7 @@ jobs:
           tag_name: ${{ env.date }}-${{ matrix.target }}
           body_path: firmware/release
 
-      - name: 上传固件到 Artifact
+      - name: 上传 SQU
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true' && env.COMBINED == 'true' }}
@@ -239,7 +238,7 @@ jobs:
             !firmware/*efi*
             !firmware/*rootfs*
 
-      - name: 上传 EFI 固件到 Artifact
+      - name: 上传 EFI
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT == 'true' && env.EFI == 'true' }}
@@ -247,7 +246,7 @@ jobs:
           name: ${{ env.date }}-${{ matrix.target }}_EFI
           path: firmware/*efi*
 
-      - name: 上传错误日志到 Artifact
+      - name: 错误日志
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.LOG == 'true' }}
@@ -292,14 +291,14 @@ jobs:
               "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"
           fi
 
-      - name: 删除工作流运行记录
+      - name: 删除记录
         uses: Mattraks/delete-workflow-runs@main
         with:
           token: ${{ secrets.PAT }}
           retain_days: 2
           keep_minimum_runs: 1
 
-      - name: 删除旧的 Releases
+      - name: 删除发布
         uses: dev-drprasad/delete-older-releases@master
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' }}
