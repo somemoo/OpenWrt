@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [lede-x86-64,openwrt-x86-64,immortalwrt-x86-64]
+        target: [lede-x86-64, openwrt-x86-64, immortalwrt-x86-64]
 
     steps:
       - name: 检出代码
@@ -41,14 +41,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 配置环境变量
+      - name: 配置变量
         run: |
           echo "FILE_NAME=${{ matrix.target }}" >> $GITHUB_ENV
           echo "REPO_NAME=$(basename "${{ matrix.target }}" | awk -F'-' '{print $1}')" >> $GITHUB_ENV
           echo "ARCH_NAME=$(basename "${{ matrix.target }}" | sed -E 's/^[^-]*-//')" >> $GITHUB_ENV
           echo "date=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
+          echo "date1=$(date +"%m.%d")" >> $GITHUB_ENV
 
-      - name: 加载 Settings.ini
+      - name: 加载配置
         run: |
           source "${GITHUB_WORKSPACE}/${{ env.REPO_NAME }}/common/settings.ini"
           if [ -f "${GITHUB_WORKSPACE}/${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/settings.ini" ]; then
@@ -59,10 +60,8 @@ jobs:
           echo "CONFIG_FILE=${CONFIG_FILE}" >> $GITHUB_ENV
           echo "CUSTOM_SH=${CUSTOM_SH}" >> $GITHUB_ENV
           echo "COMMON_SH=${COMMON_SH}" >> $GITHUB_ENV
-          echo "UPLOAD_BIN_FIRMWARE_FOR_ARTIFACT=${UPLOAD_BIN_FIRMWARE_FOR_ARTIFACT}" >> $GITHUB_ENV
           echo "UPLOAD_FIRMWARE_FOR_ARTIFACT=${UPLOAD_FIRMWARE_FOR_ARTIFACT}" >> $GITHUB_ENV
           echo "UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT=${UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT}" >> $GITHUB_ENV
-          echo "UPLOAD_ISO_FIRMWARE_FOR_ARTIFACT=${UPLOAD_ISO_FIRMWARE_FOR_ARTIFACT}" >> $GITHUB_ENV
           echo "UPLOAD_FIRMWARE_FOR_RELEASE=${UPLOAD_FIRMWARE_FOR_RELEASE}" >> $GITHUB_ENV
 
       - name: 加载环境
@@ -87,13 +86,13 @@ jobs:
           (cd po2lmo && sudo make && sudo make install)
           df -h
 
-      - name: 克隆源代码
+      - name: 克隆代码
         run: |
           git clone --depth 1 $REPO_URL -b $REPO_BRANCH OpenWrt
           rsync -a ${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/files/ OpenWrt/ 2>/dev/null || :
           cp -rf ${{ env.REPO_NAME }} OpenWrt/
 
-      - name: 加载与更新 feeds
+      - name: 更新feeds
         run: |
           cd OpenWrt
           sed -i "/src-git vi /d; \$a src-git vi https://github.com/somemoo/OpenWrt-packages;${{ env.REPO_NAME }}" feeds.conf.default
@@ -103,7 +102,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: 优化存储空间
+      - name: 优化存储
         run: |
           sudo mkdir -p -m 777 /mnt/OpenWrt/dl /mnt/OpenWrt/bin /mnt/OpenWrt/staging_dir /mnt/OpenWrt/build_dir
           ln -sfn /mnt/OpenWrt/dl OpenWrt/dl
@@ -151,44 +150,43 @@ jobs:
           FULL_LOG="${{ matrix.target }}_full.log"
           echo "::group::📦 多线程编译 ${{ matrix.target }}"
           echo "线程数: $(($(nproc)+1))"
-          if make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG" | grep -iE 'error|fatal|failed' > "$ERROR_LOG"; then
+          if { make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG"; } | grep -iE 'error:|Collected errors:|Cannot install package|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
             echo "多线程编译成功！"
-            echo "BUILD_STATUS=success" >> $GITHUB_ENV
+            rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
             echo "::endgroup::"
           else
             echo "多线程编译失败！"
             echo "::endgroup::"
             echo "::group::📝 多线程错误摘要"
-            echo "以下是最多50行错误摘要（完整日志见Artifacts）："
-            tail -n 50 "$FULL_LOG" | sed 's/^/   /'
+            echo "以下是错误摘要（完整日志见Artifacts）："
+            cat "$ERROR_LOG" | sed 's/^/   /'
             echo "::endgroup::"
             echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
             echo "::group::🐢 单线程编译 ${{ matrix.target }}"
-            if make -j1 V=s 2>&1 | tee "$FULL_LOG" | grep -iE 'error|fatal|failed' >> "$ERROR_LOG"; then
+            if { make -j1 V=s 2>&1 | tee "$FULL_LOG"; } | grep -iE 'error:|Collected errors:|Cannot install package|check_data_file_clashes|^\* ' >> "$ERROR_LOG"; then
               echo "单线程编译成功！"
-              rm -f "$FULL_LOG" "$ERROR_LOG"
+              rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
               echo "::notice::降级编译成功！"
-              echo "BUILD_STATUS=success" >> $GITHUB_ENV
               echo "::endgroup::"
             else
               echo "单线程编译失败！"
               echo "::endgroup::"
               echo "::group::📝 单线程错误摘要"
-              echo "以下是最多50行错误摘要（完整日志见Artifacts）："
-              tail -n 50 "$FULL_LOG" | sed 's/^/   /'
+              echo "以下是错误摘要（完整日志见Artifacts）："
+              cat "$ERROR_LOG" | sed 's/^/   /'
               echo "::endgroup::"
-              echo "::error::❌ 彻底编译失败！最后10行错误："
-              tail -n 10 "$FULL_LOG" | sed 's/^/   /'
-              echo "BUILD_STATUS=failed" >> $GITHUB_ENV
+              echo "::error::❌ 彻底编译失败！完整错误日志见Artifacts"
             fi
           fi
-          if [ "$BUILD_STATUS" = "success" ]; then
+          if [ ! -e "$FULL_LOG" ]; then
             echo "::group::📊 空间使用情况"
             df -hT | grep -v tmpfs
             echo "::endgroup::"
             echo "::group::✅ 构建成果"
             ls -lh bin/targets/*/* || true
             echo "::endgroup::"
+          else
+            echo "LOG=true" >> $GITHUB_ENV
           fi
 
       - name: 组织文件
@@ -196,27 +194,24 @@ jobs:
         id: organize
         run: |
           mkdir -p firmware
-          if [ "${{ env.BUILD_STATUS }}" = "failed" ]; then
-            find OpenWrt/ -type f -name "*_full.log" -o -name "*_error.log" -exec cp {} ./firmware/ \; 2>/dev/null
-          fi
-          if [ "${{ env.BUILD_STATUS }}" = "success" ]; then
+          if [ "$LOG" = "true" ]; then
+            find OpenWrt/ -type f -name "*_full.log" -o -name "*_error.log" -exec cp {} ./firmware/ \; 2>/dev/null || true
+            ls firmware
+          else
             find OpenWrt/bin/targets/ -type d -name "packages" -o -name "*buildinfo" -o -name "*json" -o -name "*txt" -o -name "*manifest" -exec rm -rf {} + 2>/dev/null
             find OpenWrt/bin/targets/ -type f -exec cp -f {} ./firmware/ \; 2>/dev/null
-            cp OpenWrt/.config ./firmware/${{ matrix.target }}.config
+            cp OpenWrt/.config  ./firmware/${{ matrix.target }}.config
             cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware
             cd firmware
-            find . -maxdepth 1 -type f ! -name "*.tar.gz" -exec sh -c 'tar -czf "$1.tar.gz" "$1" && rm -f "$1"' _ {} \;
-            tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{ matrix.target }}.config.tar.gz 
-            rm -f {sha256sums.tar.gz, release.tar.gz, ${{ matrix.target }}.config.tar.gz}
+            for file in *; do 
+              [ -f "$file" ] && tar -czf "$file.tar.gz" "$file" && rm -f "$file"
+            done
+            tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{ matrix.target }}.config.tar.gz
+            rm -f {sha256sums.tar.gz,release.tar.gz,${{ matrix.target }}.config.tar.gz}
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
-            [ -n "$(find . -name '*iso*' -print -quit)" ] && echo "ISO=true" >> $GITHUB_ENV
-            [ -n "$(find . -name '*bin*' -print -quit)" ] && echo "BIN=true" >> $GITHUB_ENV
-            [ -n "$(find . -name '*efi*' -print -quit)" ] && echo "EFI=true" >> $GITHUB_ENV
-            [ -n "$(find . -name '*squashfs*' -print -quit)" ] && echo "COMBINED=true" >> $GITHUB_ENV
-            ls
-          else
-            [ -n "$(find . -name '*_full.log' -print -quit)" ] && echo "LOG=true" >> $GITHUB_ENV
+            [ -e "*efi*" ] && echo "EFI=true" >> $GITHUB_ENV
+            [ -e "*squashfs*" ] && echo "COMBINED=true" >> $GITHUB_ENV
             ls
           fi
 
@@ -233,12 +228,6 @@ jobs:
           tag_name: ${{ env.date }}-${{ matrix.target }}
           body_path: firmware/release
 
-      - name: 添加 Release 状态
-        continue-on-error: true
-        if: ${{ steps.uprelease.outcome == 'success' }}
-        run: |
-          echo "RELEASE=true" >> $GITHUB_ENV
-
       - name: 上传固件到 Artifact
         uses: actions/upload-artifact@v4
         continue-on-error: true
@@ -250,29 +239,13 @@ jobs:
             !firmware/*efi*
             !firmware/*rootfs*
 
-      - name: 上传 EFI 固到 Artifact
+      - name: 上传 EFI 固件到 Artifact
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT == 'true' && env.EFI == 'true' }}
         with:
           name: ${{ env.date }}-${{ matrix.target }}_EFI
           path: firmware/*efi*
-
-      - name: 上传 BIN 固到 Artifact
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        if: ${{ env.UPLOAD_BIN_FIRMWARE_FOR_ARTIFACT == 'true' && env.BIN == 'true' }}
-        with:
-          name: ${{ env.date }}-${{ matrix.target }}_BIN
-          path: firmware/*bin*
-
-      - name: 上传 ISO 固件到 Artifact
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        if: ${{ env.UPLOAD_ISO_FIRMWARE_FOR_ARTIFACT == 'true' && env.ISO == 'true' }}
-        with:
-          name: ${{ env.date }}-${{ matrix.target }}_ISO
-          path: firmware/*iso*
 
       - name: 上传错误日志到 Artifact
         uses: actions/upload-artifact@v4
@@ -283,24 +256,25 @@ jobs:
           path: firmware/*_full.log
 
       - name: 消息通知
+        if: always()
         run: |
-          if [ "${{ env.COMBINED }}" == 'true' ] || [ "${{ env.EFI }}" == 'true' ] || [ "${{ env.BIN }}" == 'true' ] || [ "${{ env.ISO }}" == 'true' ] || [ "${{ env.RELEASE }}" == 'true' ]; then
-            MSG_TITLE="✅ 固件 ${{ env.date }}-${{ matrix.target }} 编译完成"
-            MSG_CONTENT="<b>🎉 编译成功！</b>%0A%0A📅 日期：${{ env.date }}%0A🔧 目标：${{ matrix.target }}%0A🚀 已上传到 Release"
-            WX_CONTENT="固件${{ env.date }}-${{ matrix.target }}编译完成😋!!!"
-          else
-            ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')
+          if [ "$LOG" = "true" ]; then
+            ERROR_LOG=$(cat firmware/${{ matrix.target }}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')
             MSG_TITLE="❌ 固件 ${{ env.date }}-${{ matrix.target }} 编译失败"
             MSG_CONTENT="<b>⚠️ 编译失败！</b>%0A%0A🔧 目标：${{ matrix.target }}%0A%0A<pre>错误日志：%0A${ERROR_LOG}</pre>%0A%0A查看完整日志请下载Artifacts"
-            WX_CONTENT="固件${{ env.date }}-${{ matrix.target }}编译失败😭!!! 错误日志: ${ERROR_LOG}"
+          else
+            MSG_TITLE="✅ 固件 ${{ env.date }}-${{ matrix.target }} 编译完成"
+            MSG_CONTENT="<b>🎉 编译成功！</b>%0A%0A📅 日期：${{ env.date }}%0A🔧 目标：${{ matrix.target }}%0A🚀 已上传到 Release"
           fi
+
           if [ -n "$SCKEY" ]; then
             curl -X POST \
               --data-urlencode "key=${{ secrets.SCKEY }}" \
               --data-urlencode "title=${MSG_TITLE}" \
-              --data-urlencode "desp=${WX_CONTENT}" \
+              --data-urlencode "desp=${MSG_CONTENT}" \
               "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"
           fi
+
           if [ -n "$TELEGRAM_TOKEN" ]; then
             curl -s -k \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
