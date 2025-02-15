@@ -1,4 +1,13 @@
 #=================================================  
+# https://github.com/P3TERX/Actions-OpenWrt  
+# 描述: 使用 GitHub Actions 构建 OpenWrt  
+# 许可证: MIT  
+# 作者: P3TERX  
+# 博客: https://p3terx.com  
+#=================================================  
+
+name: Debug  
+
 on:   
   workflow_dispatch:  
   # schedule:  
@@ -28,10 +37,7 @@ jobs:
       - name: 检出代码  
         uses: actions/checkout@v2  # Updated to a stable version  
         with:  
-          fetch-depth: 0  
-
-      # - name: SSH connection to Actions  
-      #   uses: kiddin9/debugger-action@master  
+          fetch-depth: 0 
 
       - name: 定义环境  
         if: always()  
@@ -40,39 +46,27 @@ jobs:
       - name: 消息通知  
         if: always()  
         run: |  
-          # 通用消息模板构建  
           if [ "$LOG" = "true" ]; then  
-            #ERROR_LOG=$(cat firmware/${{ matrix.target }}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')  
-            # 微信通知使用Markdown格式换行符  
-            WECHAT_MSG="⚠️ 编译失败！\n\n🔧 目标：${{ matrix.target }}\n\n错误日志：\n${ERROR_LOG}\n\n查看完整日志请下载Artifacts"  
-            # Telegram使用HTML标签换行  
-            TG_MSG="<b>⚠️ 编译失败！</b>\n\n🔧 目标：${{ matrix.target }}\n\n<pre>错误日志：\n${ERROR_LOG}</pre>\n\n查看完整日志请下载Artifacts"  
-            TITLE="❌ 固件 ${{ env.date }}-${{ matrix.target }} 编译失败"  
+            MSG_TITLE="❌ 固件编译失败"  
+            MSG_CONTENT="<b>⚠️ 编译失败！</b><br><br>🔧 目标：测试<br><br><pre>错误日志：<br>日志</pre><br><br>查看完整日志请下载Artifacts"  
           else  
-            # 微信通知使用Markdown格式换行符  
-            WECHAT_MSG="🎉 编译成功！\n\n📅 日期：${{ env.date }}\n🔧 目标：${{ matrix.target }}\n🚀 已上传到 Release"  
-            # Telegram使用HTML标签换行  
-            TG_MSG="<b>🎉 编译成功！</b>\n\n📅 日期：${{ env.date }}\n🔧 目标：${{ matrix.target }}\n🚀 已上传到 Release"  
-            TITLE="✅ 固件 ${{ env.date }}-${{ matrix.target }} 编译完成"  
+            MSG_TITLE="✅ 固件编译完成"  
+            MSG_CONTENT="<b>🎉 编译成功！</b><br><br>📅 日期：$(date +'%Y-%m-%d')<br>🔧 目标：测试<br>🚀 已上传到 Release"  
           fi  
-
-          # Server酱通知（使用Markdown格式）  
-          if [ -n "$SCKEY" ]; then  
+          
+          if [ -n "$SCKEYD" ]; then  
             curl -X POST \
-              -d "title=${TITLE}" \
-              -d "desp=${WECHAT_MSG//\n/%0A}" \  # 显式转换换行符为URL编码  
-              "https://sctapi.ftqq.com/$SCKEY.send"  
+              --data-urlencode "key=${{ secrets.SCKEY }}" \
+              --data-urlencode "title=${MSG_TITLE}" \
+              --data-urlencode "desp=${MSG_CONTENT//<br>/\\n}" \  # 将 <br> 替换为换行符发送到 Server 酱  
+              "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"  
           fi  
-
-          # Telegram通知（使用HTML格式）  
+          
           if [ -n "$TELEGRAM_TOKEN" ]; then  
-            # 替换换行符为HTML标签  
-            TG_MSG=${TG_MSG//\n/%0A}  
-            TG_MSG=${TG_MSG//\n/<br>}  
             curl -s -k \
-              --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
-              --data-urlencode "text=<b>${TITLE}</b>%0A${TG_MSG}" \
+              --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              --data-urlencode "text=<b>${MSG_TITLE}</b><br>${MSG_CONTENT}" \
               --data-urlencode "parse_mode=HTML" \
               --data-urlencode "disable_web_page_preview=true" \
-              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"  
+              "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"  
           fi
