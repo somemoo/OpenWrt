@@ -260,11 +260,18 @@ jobs:
         run: |
           if [ "$LOG" = "true" ]; then
             ERROR_LOG=$(cat firmware/${{ matrix.target }}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')
-            MSG_TITLE="❌ 固件 ${{ env.date }}-${{ matrix.target }} 编译失败"
-            MSG_CONTENT="<b>⚠️ 编译失败！</b>%0A%0A🔧 目标：${{ matrix.target }}%0A%0A<pre>错误日志：%0A${ERROR_LOG}</pre>%0A%0A查看完整日志请下载Artifacts"
+            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"
+            MSG_CONTENT="<b>-----------------------</b>  
+            📅日期：${{ env.date }}  
+            <pre>📝错误日志：  
+            ${ERROR_LOG}</pre>  
+            📝查看完整日志请下载Artifacts"
           else
-            MSG_TITLE="✅ 固件 ${{ env.date }}-${{ matrix.target }} 编译完成"
-            MSG_CONTENT="<b>🎉 编译成功！</b>%0A%0A📅 日期：${{ env.date }}%0A🔧 目标：${{ matrix.target }}%0A🚀 已上传到 Release"
+            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"
+            MSG_CONTENT="<b>-----------------------</b>  
+            📅日期：${{ env.date }}  
+            🔧目标：${{ matrix.target }}  
+            🚀已上传到 Release"
           fi
 
           if [ -n "$SCKEY" ]; then
@@ -278,7 +285,8 @@ jobs:
           if [ -n "$TELEGRAM_TOKEN" ]; then
             curl -s -k \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${MSG_CONTENT}" \
+              --data-urlencode "text=<b>${MSG_TITLE}</b>  
+              ${MSG_CONTENT}" \
               --data-urlencode "parse_mode=HTML" \
               --data-urlencode "disable_web_page_preview=true" \
               "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"
