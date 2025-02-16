@@ -35,7 +35,7 @@ jobs:
 
       - name: 定义环境  
         if: always()  
-        run: echo "LOG=true" >> $GITHUB_ENV  
+        run: echo "LOG=truet" >> $GITHUB_ENV  
 
       - name: 消息通知  
         if: always()  
