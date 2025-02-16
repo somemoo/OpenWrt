@@ -262,8 +262,8 @@ jobs:
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"
             MSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
-            <pre>📝错误日志：  
-            ${ERROR_LOG}</pre>  
+            📝错误日志：  
+            <pre>${ERROR_LOG}</pre>  
             📝查看完整日志请下载Artifacts"
             WSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
