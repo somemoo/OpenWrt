@@ -157,7 +157,7 @@ jobs:
             echo "::endgroup::"
             echo "::group::📝 多线程错误摘要"
             echo "以下是错误摘要（完整日志见Artifacts）："
-            cat "$ERROR_LOG" | sed 's/^/   /'
+            tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
             echo "::endgroup::"
             echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
             echo "::group::🐢 单线程编译 ${{ matrix.target }}"
@@ -171,7 +171,7 @@ jobs:
               echo "::endgroup::"
               echo "::group::📝 单线程错误摘要"
               echo "以下是错误摘要（完整日志见Artifacts）："
-              cat "$ERROR_LOG" | sed 's/^/   /'
+              tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
               echo "::endgroup::"
               echo "::error::❌ 彻底编译失败！完整错误日志见Artifacts"
             fi
