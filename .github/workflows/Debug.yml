@@ -55,15 +55,15 @@ jobs:
             MSG_TITLE="✅ 固件 ${{ matrix.target }}1 编译完成"  
             WMSG_CONTENT="构建信息摘要：  
             📅编译日期：${{ env.date }}  
-            🔧生成目标：${{ matrix.target }}1  
-            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}1/${{ matrix.target }}1-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}1-generic-squashfs-combined.img.tar.gz</a>" 
+            🔧生成目标：${{ matrix.target }}  
+            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
             TMSG_CONTENT="------------------------  
-            📅编译日期：22  
-            🔧生成目标：2  
-            <a href=\"https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz\">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"  
+            📅编译日期：${{ env.date }}  
+            🔧生成目标：${{ matrix.target }}  
+            📥下载地址：<a href=\"https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz\">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
           fi  
           # PushPlus 通知  
-          if [ -n "$PUSHPLUS_TOKENp" ]; then
+          if [ -n "$PUSHPLUS_TOKEN" ]; then
             curl -X POST \
               -H "Content-Type: application/json" \
               -d "{  
