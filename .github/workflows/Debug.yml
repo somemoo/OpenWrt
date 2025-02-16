@@ -52,13 +52,13 @@ jobs:
             📝目标：测试  
             <pre>📝错误日志：  
             日志</pre>  
-            📥下载地址：<a href=\"https://github.com/somemoo/OpenWrt/releases/download/generic-squashfs-combined.img.tar.gz\">generic-squashfs-combined.img.tar.gz</a>""  
+            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/generic-squashfs-combined.img.tar.gz">generic-squashfs-combined.img.tar.gz</a>"  
           else  
             MSG_TITLE="✅ 固件编译完成"  
             MSG_CONTENT="<b>-----------------------</b>    
             📅 日期：$(date +'%Y-%m-%d')    
             🔧 目标：测试    
-            📥下载地址：<a href=\"https://github.com/somemoo/OpenWrt/releases/download/generic-squashfs-combined.img.tar.gz\">generic-squashfs-combined.img.tar.gz</a>""  
+            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/generic-squashfs-combined.img.tar.gz">generic-squashfs-combined.img.tar.gz</a>"  
           fi  
           
           if [ -n "$SCKEYD" ]; then  
