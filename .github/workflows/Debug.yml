@@ -58,9 +58,9 @@ jobs:
             🔧生成目标：${{ matrix.target }}1  
             📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}1/${{ matrix.target }}1-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}1-generic-squashfs-combined.img.tar.gz</a>" 
             TMSG_CONTENT="------------------------  
-            📅编译日期：22.2.2  
-            🔧生成目标：2.2.2-2.2.2  
-            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/2.22-2-2.2.2-2.2/1-1-11-generic-squashfs-combined.img.tar.gz">1.2.1-1-generic-squashfs-combined.img.tar.gz</a>" 
+            📅编译日期：22  
+            🔧生成目标：2  
+            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/22/1-generic-squashfs-combined.img.tar.gz">11-generic-squashfs-combined.img.tar.gz</a>" 
           fi  
           # PushPlus 通知  
           if [ -n "$PUSHPLUS_TOKENp" ]; then
