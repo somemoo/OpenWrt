@@ -1,4 +1,4 @@
- name: Debug  
+name: Debug  
 
 on:   
   workflow_dispatch:  
@@ -16,7 +16,7 @@ env:
   TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}  
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  
   TZ: Asia/Shanghai  
-  date: ${{ github.run_date }}  # 添加编译日期环境变量  
+  date: ${{ github.run_date }}  
 
 jobs:  
   build_openwrt:  
@@ -29,7 +29,7 @@ jobs:
     
     steps:  
       - name: 检出代码  
-        uses: actions/checkout@v3  # 更新为最新稳定版本  
+        uses: actions/checkout@main   
         with:  
           fetch-depth: 0  
 
