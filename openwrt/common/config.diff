@@ -1,6 +1,8 @@
 # CONFIG_SIGNATURE_CHECK is not set
 # CONFIG_SIGNED_PACKAGES is not set
 # CONFIG_GRUB_CONSOLE is not set
+# CONFIG_PACKAGE_dnsmasq is not set
+# CONFIG_PACKAGE_dnsmasq-dhcpv6 is not set
 CONFIG_GRUB_TITLE="x86_64 Firmware By ViS0N"
 
 # IPv6支持:
