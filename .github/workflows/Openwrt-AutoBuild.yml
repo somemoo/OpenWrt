@@ -257,7 +257,7 @@ jobs:
         if: always()
         run: |
           if [ "$LOG" = "true" ]; then
-            ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')
+            ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log)
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"
             MSG_CONTENT="---------------------------------------  
             📅编译日期：${{ env.date }}  
