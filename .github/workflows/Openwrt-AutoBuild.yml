@@ -260,15 +260,15 @@ jobs:
             ERROR_LOG=$(cat firmware/${{ matrix.target }}_make_error.log | sed 's/</\&lt;/g; s/>/\&gt;/g')
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"
             MSG_CONTENT="---------------------------------------  
-            📅日期：${{ env.date }}  
+            📅编译日期：${{ env.date }}  
             <pre>📝错误日志：  
             ${ERROR_LOG}</pre>  
             📝查看完整日志请下载Artifacts"
           else
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"
             MSG_CONTENT="---------------------------------------  
-            📅日期：${{ env.date }}  
-            🔧目标：${{ matrix.target }}  
+            📅编译日期：${{ env.date }}  
+            🔧生成目标：${{ matrix.target }}  
             📥下载地址：[${{ matrix.target }}-generic-squashfs-combined.img.tar.gz](https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz)"
           fi
 
