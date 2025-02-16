@@ -63,7 +63,7 @@ jobs:
             📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}1/${{ matrix.target }}1-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}1-generic-squashfs-combined.img.tar.gz</a>"
           fi  
           # PushPlus 通知  
-          if [ -n "$PUSHPLUS_TOKEN" ]; then
+          if [ -n "$PUSHPLUS_TOKENp" ]; then
             curl -X POST \
               -H "Content-Type: application/json" \
               -d "{  
