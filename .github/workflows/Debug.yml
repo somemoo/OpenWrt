@@ -48,9 +48,7 @@ jobs:
             📝查看完整日志请下载Artifacts"  
           else  
             MSG_TITLE="✅ 固件 OpenWrt 编译完成"  
-            MSG_CONTENT="------------------------  
-            📅编译日期：${{ env.date }}  
-            🔧生成目标：OpenWrt  
+            MSG_CONTENT="------------------------%0A📅编译日期：${{ env.date }}%0A🔧生成目标：OpenWrt  
             📥下载地址：<a href='https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz'>OpenWrt-generic-squashfs-combined.img.tar.gz</a>"  
           fi  
           # PushPlus 通知  
