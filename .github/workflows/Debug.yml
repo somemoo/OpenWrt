@@ -12,7 +12,7 @@ env:
   REPO_TOKEN: ${{ secrets.REPO_TOKEN }}  
   SCKEY: ${{ secrets.SCKEY }}  
   PAT: ${{ secrets.PAT }}  
-  PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+  PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}  
   TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}  
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  
   TZ: Asia/Shanghai  
@@ -29,7 +29,7 @@ jobs:
     
     steps:  
       - name: 检出代码  
-        uses: actions/checkout@main   
+        uses: actions/checkout@v2  # 使用稳定的版本  
         with:  
           fetch-depth: 0  
 
@@ -51,19 +51,18 @@ jobs:
             MSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
             🔧生成目标：OpenWrt  
-            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz">OpenWrt-generic-squashfs-combined.img.tar.gz</a>"  
+            📥下载地址：<a href='https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz'>OpenWrt-generic-squashfs-combined.img.tar.gz</a>"  
           fi  
-
           # PushPlus 通知  
           curl -X POST \
             -H "Content-Type: application/json" \
             -d "{  
-              "token": "${{ secrets.PUSHPLUS_TOKEN }}",  
-              "title": "$MSG_TITLE",  
-              "content": "$MSG_CONTENT"  
-            }" 
+              \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
+              \"title\": \"$MSG_TITLE\",  
+              \"content\": \"$MSG_CONTENT\"  
+            }" \
             http://www.pushplus.plus/send  
-
+          
           # Telegram 通知  
           curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
