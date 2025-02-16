@@ -277,23 +277,26 @@ jobs:
             TMSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
             🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
+            📥下载地址：<a href=\"https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz\">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
           fi  
           # PushPlus 通知  
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d "{  
-              \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
-              \"title\": \"$MSG_TITLE\",  
-              \"content\": \"$WMSG_CONTENT\"  
-            }" \
-            http://www.pushplus.plus/send  
-          
+          if [ -n "$PUSHPLUS_TOKEN" ]; then
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -d "{  
+                \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
+                \"title\": \"$MSG_TITLE\",  
+                \"content\": \"$WMSG_CONTENT\"  
+              }" \
+              http://www.pushplus.plus/send  
+          fi
           # Telegram 通知  
-          curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d parse_mode="HTML" \
-            -d text="<b>$MSG_TITLE</b>%0A$TMSG_CONTENT" 
+          if [ -n "$TELEGRAM_TOKEN" ]; then
+            curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
+              -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -d parse_mode="HTML" \
+              -d text="<b>$MSG_TITLE</b>%0A$TMSG_CONTENT"
+          fi
 
       - name: 删除记录
         uses: Mattraks/delete-workflow-runs@main
