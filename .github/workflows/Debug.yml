@@ -53,10 +53,14 @@ jobs:
             📝查看完整日志请下载Artifacts" 
           else  
             MSG_TITLE="✅ 固件 OpenWrt 编译完成"  
-            MSG_CONTENT="------------------------  
+            WMSG_CONTENT="构建信息摘要：  
             📅编译日期：${{ env.date }}  
             🔧生成目标：OpenWrt  
-            📥下载地址：<a href='https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz'>OpenWrt-generic-squashfs-combined.img.tar.gz</a>"  
+            📥下载地址：<a href='https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz'>OpenWrt-generic-squashfs-combined.img.tar.gz</a>" 
+            TMSG_CONTENT="------------------------  
+            📅编译日期：${{ env.date }}  
+            🔧生成目标：OpenWrt  
+            📥下载地址：<a href='https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz'>OpenWrt-generic-squashfs-combined.img.tar.gz</a>" 
           fi  
           # PushPlus 通知  
           curl -X POST \
