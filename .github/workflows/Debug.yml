@@ -41,18 +41,17 @@ jobs:
         if: always()  
         run: |  
           if [ "$LOG" = "true" ]; then  
-            ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log)  
-            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
+            MSG_TITLE="❌ 固件 OpenWrt 编译失败"  
             MSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
-            <details><summary>错误日志</summary>$ERROR_LOG</details>  
+            <details><summary>错误日志</summary>日志</details>  
             📝查看完整日志请下载Artifacts"  
           else  
-            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
+            MSG_TITLE="✅ 固件 OpenWrt 编译完成"  
             MSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
-            🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"  
+            🔧生成目标：OpenWrt  
+            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz">OpenWrt-generic-squashfs-combined.img.tar.gz</a>"  
           fi  
 
           # PushPlus 通知  
