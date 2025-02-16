@@ -49,7 +49,7 @@ jobs:
             TMSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
             📝错误日志：  
-            <pre>${ERROR_LOG}</pre>  
+            <pre>${ERROR_LOG}日志</pre>  
             📝查看完整日志请下载Artifacts" 
           else  
             MSG_TITLE="✅ 固件 OpenWrt 编译完成"  
