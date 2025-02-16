@@ -42,13 +42,20 @@ jobs:
         run: |  
           if [ "$LOG" = "true" ]; then  
             MSG_TITLE="❌ 固件 OpenWrt 编译失败"  
-            MSG_CONTENT="------------------------  
+            WMSG_CONTENT="失败信息摘要：  
             📅编译日期：${{ env.date }}  
             <details><summary>错误日志</summary>日志</details>  
             📝查看完整日志请下载Artifacts"  
+            TMSG_CONTENT="------------------------  
+            📅编译日期：${{ env.date }}  
+            📝错误日志：  
+            <pre>${ERROR_LOG}</pre>  
+            📝查看完整日志请下载Artifacts" 
           else  
             MSG_TITLE="✅ 固件 OpenWrt 编译完成"  
-            MSG_CONTENT="------------------------%0A📅编译日期：${{ env.date }}%0A🔧生成目标：OpenWrt  
+            MSG_CONTENT="------------------------  
+            📅编译日期：${{ env.date }}  
+            🔧生成目标：OpenWrt  
             📥下载地址：<a href='https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-OpenWrt/OpenWrt-generic-squashfs-combined.img.tar.gz'>OpenWrt-generic-squashfs-combined.img.tar.gz</a>"  
           fi  
           # PushPlus 通知  
@@ -57,7 +64,7 @@ jobs:
             -d "{  
               \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
               \"title\": \"$MSG_TITLE\",  
-              \"content\": \"$MSG_CONTENT\"  
+              \"content\": \"$WMSG_CONTENT\"  
             }" \
             http://www.pushplus.plus/send  
           
@@ -65,4 +72,5 @@ jobs:
           curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d parse_mode="HTML" \
-            -d text="<b>$MSG_TITLE</b>%0A$MSG_CONTENT"
+            -d disable_web_page_preview="true" \
+            -d text="<b>$MSG_TITLE</b>%0A$TMSG_CONTENT"
