@@ -258,46 +258,42 @@ jobs:
         run: |
           if [ "$LOG" = "true" ]; then
             ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log)
-            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"
-            MSG_CONTENT="------------------------  
+            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
+            WMSG_CONTENT="失败信息摘要：  
+            📅编译日期：${{ env.date }}  
+            <details><summary>错误日志</summary>日志</details>  
+            📝查看完整日志请下载Artifacts"  
+            TMSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
             📝错误日志：  
             <pre>${ERROR_LOG}</pre>  
-            📝查看完整日志请下载Artifacts"
-            WSG_CONTENT="------------------------  
-            📅编译日期：${{ env.date }}  
-            📝错误日志：  
-            ${ERROR_LOG}  
-            📝查看完整日志请下载Artifacts"
-          else
-            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"
-            MSG_CONTENT="------------------------  
+            📝查看完整日志请下载Artifacts" 
+          else  
+            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
+            WMSG_CONTENT="构建信息摘要：  
             📅编译日期：${{ env.date }}  
             🔧生成目标：${{ matrix.target }}  
             📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
-            WSG_CONTENT="------------------------  
+            TMSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
             🔧生成目标：${{ matrix.target }}  
-            📥下载地址：[${{ matrix.target }}-generic-squashfs-combined.img.tar.gz](https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz)"
-          fi
-
-          if [ -n "$SCKEY" ]; then
-            curl -X POST \
-              --data-urlencode "key=${{ secrets.SCKEY }}" \
-              --data-urlencode "title=${MSG_TITLE}" \
-              --data-urlencode "desp=${WSG_CONTENT}" \
-              "https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send"
-          fi
-
-          if [ -n "$TELEGRAM_TOKEN" ]; then
-            curl -s -k \
-              --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              --data-urlencode "text=<b>${MSG_TITLE}</b>  
-              ${MSG_CONTENT}" \
-              --data-urlencode "parse_mode=HTML" \
-              --data-urlencode "disable_web_page_preview=true" \
-              "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage"
-          fi
+            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
+          fi  
+          # PushPlus 通知  
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d "{  
+              \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
+              \"title\": \"$MSG_TITLE\",  
+              \"content\": \"$WMSG_CONTENT\"  
+            }" \
+            http://www.pushplus.plus/send  
+          
+          # Telegram 通知  
+          curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="HTML" \
+            -d text="<b>$MSG_TITLE</b>%0A$TMSG_CONTENT" 
 
       - name: 删除记录
         uses: Mattraks/delete-workflow-runs@main
