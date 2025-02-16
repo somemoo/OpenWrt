@@ -1,12 +1,4 @@
-#=================================================  
-# https://github.com/P3TERX/Actions-OpenWrt  
-# 描述: 使用 GitHub Actions 构建 OpenWrt  
-# 许可证: MIT  
-# 作者: P3TERX  
-# 博客: https://p3terx.com  
-#=================================================  
-
-name: Debug  
+ name: Debug  
 
 on:   
   workflow_dispatch:  
@@ -20,9 +12,11 @@ env:
   REPO_TOKEN: ${{ secrets.REPO_TOKEN }}  
   SCKEY: ${{ secrets.SCKEY }}  
   PAT: ${{ secrets.PAT }}  
+  PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
   TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}  
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  
   TZ: Asia/Shanghai  
+  date: ${{ github.run_date }}  # 添加编译日期环境变量  
 
 jobs:  
   build_openwrt:  
@@ -35,7 +29,7 @@ jobs:
     
     steps:  
       - name: 检出代码  
-        uses: actions/checkout@v2  # Updated to a stable version  
+        uses: actions/checkout@v3  # 更新为最新稳定版本  
         with:  
           fetch-depth: 0  
 
@@ -46,10 +40,33 @@ jobs:
       - name: 消息通知  
         if: always()  
         run: |  
-          curl -X POST "https://sc.ftqq.com/${{ secrets.SCKEY }}.send" \
-          -H "Content-Type: application/json" \
-          -d '{  
-              "text": "折叠消息示例",  
-              "desp": "<details><summary>点击展开</summary>这里是折叠的内容。当你点击上面的链接时，这些文本会显示出来。</details>"  
-          }'
+          if [ "$LOG" = "true" ]; then  
+            ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log)  
+            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
+            MSG_CONTENT="------------------------  
+            📅编译日期：${{ env.date }}  
+            <details><summary>错误日志</summary>$ERROR_LOG</details>  
+            📝查看完整日志请下载Artifacts"  
+          else  
+            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
+            MSG_CONTENT="------------------------  
+            📅编译日期：${{ env.date }}  
+            🔧生成目标：${{ matrix.target }}  
+            📥下载地址：<a href=\"https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz\">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"  
+          fi  
 
+          # PushPlus 通知  
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d "{  
+              \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
+              \"title\": \"$MSG_TITLE\",  
+              \"content\": \"$MSG_CONTENT\"  
+            }" \
+            http://www.pushplus.plus/send  
+
+          # Telegram 通知  
+          curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="HTML" \
+            -d text="<b>$MSG_TITLE</b>%0A$MSG_CONTENT"
