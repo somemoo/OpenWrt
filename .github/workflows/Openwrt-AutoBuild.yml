@@ -258,46 +258,44 @@ jobs:
       - name: 消息通知
         if: always()
         run: |
-          if [ "$LOG" = "true" ]; then
-            ERROR_LOG=$(tail -n 10 firmware/${{ matrix.target }}_make_error.log)
+          if [ "${{ env.LOG }}" = "true" ]; then
+            LOG_FILE="firmware/${{ matrix.target }}_make_error.log"
+            if [ -f "$LOG_FILE" ]; then
+              ERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\"/g; s/$/\\n/')
+            else
+              ERROR_LOG="未找到日志文件"
+            fi
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
-            WMSG_CONTENT="失败信息摘要：  
-            📅编译日期：${{ env.date }}  
-            <details><summary>错误日志</summary>${ERROR_LOG}</details>  
-            📝查看完整日志请下载Artifacts"  
-            TMSG_CONTENT="------------------------  
-            📅编译日期：${{ env.date }}  
-            📝错误日志：  
-            <pre>${ERROR_LOG}</pre>  
-            📝查看完整日志请下载Artifacts" 
+            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志</summary><pre>${ERROR_LOG}</pre></details>\n📝查看完整日志请下载Artifacts"
+            TMSG_CONTENT="\n------------------------\n📅编译日期：${{ env.date }}\n📝错误日志：\n<pre>${ERROR_LOG}</pre>\n📝查看完整日志请下载Artifacts"
           else  
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
-            WMSG_CONTENT="构建信息摘要：  
-            📅编译日期：${{ env.date }}  
-            🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href="${{ steps.uprelease.outputs.url }}">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
-            TMSG_CONTENT="------------------------  
-            📅编译日期：${{ env.date }}  
-            🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href=\"${{ steps.uprelease.outputs.url }}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            RELEASE_URL="${{ steps.uprelease.outputs.url }}"
+            WMSG_CONTENT="构建信息摘要：\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            TMSG_CONTENT="\n------------------------\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
-          # PushPlus 通知  
-          if [ -n "$PUSHPLUS_TOKEN" ]; then
+          
+          # PushPlus 通知
+          if [ -n "${{ secrets.PUSHPLUS_TOKEN }}" ]; then
             curl -X POST \
               -H "Content-Type: application/json" \
-              -d "{  
-                \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\",  
-                \"title\": \"$MSG_TITLE\",  
-                \"content\": \"$WMSG_CONTENT\"  
+              -d "{ \
+                \"token\": \"${{ secrets.PUSHPLUS_TOKEN }}\", \
+                \"title\": \"$MSG_TITLE\", \
+                \"content\": \"$(echo -e $WMSG_CONTENT)\" \
               }" \
               http://www.pushplus.plus/send  
           fi
-          # Telegram 通知  
-          if [ -n "$TELEGRAM_TOKEN" ]; then
-            curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
-              -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-              -d parse_mode="HTML" \
-              -d text="<b>$MSG_TITLE</b>%0A$TMSG_CONTENT"
+
+          # Telegram 通知（使用HTML模式）
+          if [ -n "${{ secrets.TELEGRAM_TOKEN }}" ]; then
+            # 转换换行符为HTML换行
+            TMSG_HTML=$(echo -e "$TMSG_CONTENT" | sed 's/\\n/%0A/g')
+            curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              --data-urlencode "parse_mode=HTML" \
+              --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${TMSG_HTML}"
           fi
 
       - name: 删除记录
