@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [lede-x86-64, openwrt-x86-64, immortalwrt-x86-64]
+        target: [lede-ac58u, openwrt-ac58u, immortalwrt-ac58u]
 
     steps:
       - name: 检出代码
@@ -207,7 +207,7 @@ jobs:
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
             compgen -G "*efi*" > /dev/null && echo "EFI=true" >> $GITHUB_ENV
-            compgen -G "*squashfs*" > /dev/null && echo "COMBINED=true" >> $GITHUB_ENV
+            compgen -G "*generic*" > /dev/null && echo "COMBINED=true" >> $GITHUB_ENV
             ls
           fi
 
@@ -224,15 +224,17 @@ jobs:
           tag_name: ${{ env.date }}-${{ matrix.target }}
           body_path: firmware/release
 
-      - name: 上传 SQU
+      - name: 上传 COM
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true' && env.COMBINED == 'true' }}
         with:
           name: ${{ env.date }}-${{ matrix.target }}
           path: |
-            firmware/*squashfs*
+            firmware/*generic*
+            !firmware/*ext4*
             !firmware/*efi*
+            !firmware/*kernel*
             !firmware/*rootfs*
 
       - name: 上传 EFI
