@@ -37,33 +37,34 @@ jobs:
         if: always()  
         run: echo "LOG=true" >> $GITHUB_ENV  
 
-      - name: 消息通知  
-        if: always()  
-        run: |  
-          if [ "$LOG" = "true" ]; then  
-            MSG_TITLE="❌ 固件 ${{ matrix.target }}1 编译失败"  
-            WMSG_CONTENT="失败信息摘要：  
-            📅编译日期：${{ env.date }}  
-            <details><summary>错误日志</summary>${ERROR_LOG}1</details>  
-            📝查看完整日志请下载Artifacts"  
-            TMSG_CONTENT="------------------------  
-            📅编译日期：${{ env.date }}  
-            📝错误日志：  
-            <pre>${ERROR_LOG}1</pre>  
-            📝查看完整日志请下载Artifacts" 
+      - name: 消息通知
+        if: always()
+        run: |
+          if [ "${{ env.LOG }}" = "true" ]; then
+            ERROR_LOG=$(tail -n 10 firmware/"${{ matrix.target }}"_make_error.log | sed 's/"/\\"/g')
+            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
+            WMSG_CONTENT="失败信息摘要：<br>
+            📅编译日期：${{ env.date }}<br>
+            <details><summary>错误日志</summary><pre>${ERROR_LOG}</pre></details><br>
+            📝查看完整日志请下载Artifacts"
+            TMSG_CONTENT="------------------------<br>
+            📅编译日期：${{ env.date }}<br>
+            📝错误日志：<br>
+            <pre>${ERROR_LOG}</pre><br>
+            📝查看完整日志请下载Artifacts"
           else  
-            MSG_TITLE="✅ 固件 ${{ matrix.target }}1 编译完成"  
-            WMSG_CONTENT="构建信息摘要：  
-            📅编译日期：${{ env.date }}  
-            🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href="https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
-            TMSG_CONTENT="------------------------  
-            📅编译日期：${{ env.date }}  
-            🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href=\"https://github.com/somemoo/OpenWrt/releases/download/${{ env.date }}-${{ matrix.target }}/${{ matrix.target }}-generic-squashfs-combined.img.tar.gz\">${{ matrix.target }}-generic-squashfs-combined.img.tar.gz</a>"
+            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
+            WMSG_CONTENT="构建信息摘要：<br>
+            📅编译日期：${{ env.date }}<br>
+            🔧生成目标：${{ matrix.target }}<br>
+            📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            TMSG_CONTENT="------------------------<br>
+            📅编译日期：${{ env.date }}<br>
+            🔧生成目标：${{ matrix.target }}<br>
+            📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
           # PushPlus 通知  
-          if [ -n "$PUSHPLUS_TOKEN" ]; then
+          if [ -n "${{ secrets.PUSHPLUS_TOKEN }}" ]; then
             curl -X POST \
               -H "Content-Type: application/json" \
               -d "{  
@@ -74,9 +75,10 @@ jobs:
               http://www.pushplus.plus/send  
           fi
           # Telegram 通知  
-          if [ -n "$TELEGRAM_TOKEN" ]; then
-            curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
-              -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-              -d parse_mode="HTML" \
-              -d text="<b>$MSG_TITLE</b>%0A$TMSG_CONTENT"
+          if [ -n "${{ secrets.TELEGRAM_TOKEN }}" ]; then
+            curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              --data-urlencode "parse_mode=HTML" \
+              --data-urlencode "text=<b>$MSG_TITLE</b>%0A$TMSG_CONTENT"
           fi
