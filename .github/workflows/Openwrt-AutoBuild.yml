@@ -295,7 +295,7 @@ jobs:
               -H "Content-Type: application/x-www-form-urlencoded" \
               --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
               --data-urlencode "parse_mode=HTML" \
-              --data-urlencode "text=<b>${MSG_TITLE}</b>%0A${TMSG_HTML}"
+              --data-urlencode "text=<b>${MSG_TITLE}</b>${TMSG_HTML}"
           fi
 
       - name: 删除记录
