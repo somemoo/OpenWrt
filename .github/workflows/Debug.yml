@@ -50,7 +50,7 @@ jobs:
             fi
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
             WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志</summary><pre>${ERROR_LOG}</pre></details>\n📝查看完整日志请下载Artifacts"
-            TMSG_CONTENT="------------------------\n📅编译日期：${{ env.date }}\n📝错误日志：\n<pre>${ERROR_LOG}</pre>\n📝查看完整日志请下载Artifacts"
+            TMSG_CONTENT="\n------------------------\n📅编译日期：${{ env.date }}\n📝错误日志：\n<pre>${ERROR_LOG}</pre>\n📝查看完整日志请下载Artifacts"
           else  
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
             RELEASE_URL="${{ steps.release.outputs.url }}"
