@@ -59,6 +59,7 @@ jobs:
           
           # PushPlus 通知
           if [ -n "${{ secrets.PUSHPLUS_TOKEN }}" ]; then
+            echo "PUSHPLUS_TOKEN=${{ secrets.PUSHPLUS_TOKEN }}" 
             curl -X POST \
               -H "Content-Type: application/json" \
               -d "{ \
@@ -66,7 +67,6 @@ jobs:
                 \"title\": \"$MSG_TITLE\", \
                 \"content\": \"$(echo -e $WMSG_CONTENT)\" \
               }" \
-              echo "PUSHPLUS_TOKEN=${{ secrets.PUSHPLUS_TOKEN }}" 
               http://www.pushplus.plus/send  
           fi
 
