@@ -5,6 +5,9 @@
 # CONFIG_PACKAGE_dnsmasq-dhcpv6 is not set
 CONFIG_GRUB_TITLE="x86_64 Firmware By ViS0N"
 
+# CONFIG_PACKAGE_socat is not set
+# CONFIG_PACKAGE_zerotier is not set
+
 # IPv6支持:
 CONFIG_IPV6=y
 CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
