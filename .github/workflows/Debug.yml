@@ -35,12 +35,11 @@ jobs:
 
       - name: 定义环境  
         if: always()  
-        run: echo "LOG=true" >> $GITHUB_ENV  
+        run: echo "LOG=true1" >> $GITHUB_ENV  
 
       - name: 消息通知
         if: always()
         run: |
-          # 检查日志文件是否存在
           if [ "${{ env.LOG }}" = "true" ]; then
             LOG_FILE="firmware/${{ matrix.target }}_make_error.log"
             if [ -f "$LOG_FILE" ]; then
@@ -53,13 +52,13 @@ jobs:
             TMSG_CONTENT="\n------------------------\n📅编译日期：${{ env.date }}\n📝错误日志：\n<pre>${ERROR_LOG}</pre>\n📝查看完整日志请下载Artifacts"
           else  
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
-            RELEASE_URL="${{ steps.release.outputs.url }}"
+            RELEASE_URL="${{ steps.uprelease.outputs.url }}"
             WMSG_CONTENT="构建信息摘要：\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
             TMSG_CONTENT="\n------------------------\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
           
-          # PushPlus 通知（需要HTML换行转义）
-          if [ -n "${{ secrets.PUSHPLUS_TOKENv }}" ]; then
+          # PushPlus 通知
+          if [ -n "${{ secrets.PUSHPLUS_TOKEN }}" ]; then
             curl -X POST \
               -H "Content-Type: application/json" \
               -d "{ \
@@ -81,3 +80,10 @@ jobs:
               --data-urlencode "text=<b>${MSG_TITLE}</b>${TMSG_HTML}"
           fi
 
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.PAT }}
+          repository: ${{ github.repository }}
+          retain_days: 2
+          keep_minimum_runs: 1
