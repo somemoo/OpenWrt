@@ -53,7 +53,7 @@ jobs:
           else  
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
             RELEASE_URL="${{ steps.uprelease.outputs.url }}"
-            WMSG_CONTENT="构建信息摘要：\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            WMSG_CONTENT="构建信息摘要"
             TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
           
