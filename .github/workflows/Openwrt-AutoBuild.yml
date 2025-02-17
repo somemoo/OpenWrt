@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [lede-ac58u, openwrt-ac58u, immortalwrt-ac58u]
+        target: [lede-x86-64, openwrt-x86-64, immortalwrt-x86-64]
 
     steps:
       - name: 检出代码
