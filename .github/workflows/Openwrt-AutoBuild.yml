@@ -275,11 +275,11 @@ jobs:
             WMSG_CONTENT="构建信息摘要：  
             📅编译日期：${{ env.date }}  
             🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href="${{ steps.release.outputs.url }}">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            📥下载地址：<a href="${{ steps.uprelease.outputs.url }}">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
             TMSG_CONTENT="------------------------  
             📅编译日期：${{ env.date }}  
             🔧生成目标：${{ matrix.target }}  
-            📥下载地址：<a href=\"${{ steps.release.outputs.url }}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            📥下载地址：<a href=\"${{ steps.uprelease.outputs.url }}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
           # PushPlus 通知  
           if [ -n "$PUSHPLUS_TOKEN" ]; then
