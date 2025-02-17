@@ -182,7 +182,6 @@ jobs:
             echo "::endgroup::"
             echo "::group::✅ 构建成果"
             ls -h bin/targets/*/* || true
-            [ "$REPO_NAME" = "lede" ] && rename "s/openwrt/$REPO_NAME/" openwrt-*
             echo "::endgroup::"
           else
             echo "LOG=true" >> $GITHUB_ENV
@@ -202,6 +201,7 @@ jobs:
             cp OpenWrt/.config  ./firmware/${{matrix.target}}.config  
             cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware    
             cd firmware  
+            [ "$REPO_NAME" = "lede" ] && rename "s/openwrt/$REPO_NAME/" openwrt-*
             for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
             tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
             mv sha256sums ${{ matrix.target }}_sha256sums
