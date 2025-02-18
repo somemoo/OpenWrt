@@ -278,7 +278,6 @@ jobs:
           
           # PushPlus 通知
           if [ -n "${{ secrets.PUSHPLUS_TOKEN }}" ]; then
-            echo "$WMSG_CONTENT"
             curl -X POST \
               -H "Content-Type: application/json" \
               -d "{ \
