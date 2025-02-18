@@ -43,10 +43,10 @@ jobs:
         if: always()
         run: |
           if [ "${{ env.LOG }}" = "true" ]; then
-            LOG_FILE="失败信息摘要：<br>编译日期：2025.02.18-0322<br><details><summary>错误日志:</summary><pre>ConfiguCollected errors:<br>* check_data_file_clashes: Package luci-app-socat wants to install file /home/runner/work/OpenWrt/OpenWrt/OpenWrt/build_dir/target-x86_64_musl/root-x86/etc/config/socat<br> \But that file is already provided by package  * socat<br> </pre></details><br>??查看完整日志请下载Artifacts"
+            LOG_FILE="ConfiguCollected errors:<br>* check_data_file_clashes: Package luci-app-socat wants to install file /home/runner/work/OpenWrt/OpenWrt/OpenWrt/build_dir/target-x86_64_musl/root-x86/etc/config/socat<br> \But that file is already provided by package  * socat<br>查看完整日志请下载Artifacts"
             #ERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\"/g; s/$/\\n/')
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
-            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志:</summary><pre>${ERROR_LOG}</pre></details>\n📝查看完整日志请下载Artifacts"
+            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志:</summary><pre>${LOG_FILE}</pre></details>\n📝查看完整日志请下载Artifacts"
           else  
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
             RELEASE_URL="${{ steps.uprelease.outputs.url }}"
