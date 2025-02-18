@@ -129,7 +129,7 @@ jobs:
       - name: 应用补丁
         run: |
           cd OpenWrt
-          find "${{ env.REPO_NAME }}" -name "*.patch" 2>/dev/null | xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
+          find "${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/patches" -name "*.patch" 2>/dev/null | xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
 
       - name: 下载依赖
         run: |
