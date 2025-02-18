@@ -261,7 +261,7 @@ jobs:
           if [ "${{ env.LOG }}" = "true" ]; then
             LOG_FILE="firmware/${{ matrix.target }}_make_error.log"
             if [ -f "$LOG_FILE" ]; then
-              WERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\\"/g; s/\*/\\\*/g; s/$/\<br>/')
+              WERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\\"/g; s/\*/\>/g; s/$/\<br><br>/')
               TERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\"/g; s/$/\\n/')
             else
               ERROR_LOG="未找到日志文件"
