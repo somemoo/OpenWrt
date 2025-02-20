@@ -204,6 +204,7 @@ jobs:
             [ "$REPO_NAME" = "lede" ] && rename "s/openwrt/$REPO_NAME/" openwrt-*
             for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
             tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
+            sed -i '/## 固件说明/a 1. 固件采用的分支为OpenWrt-${{ env.REPO_BRANCH }}!' release
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
             compgen -G "*efi*" > /dev/null && echo "EFI=true" >> $GITHUB_ENV
