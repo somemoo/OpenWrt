@@ -13,16 +13,16 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}  
     steps:  
       - name: 检出代码  
-        uses: actions/checkout@main  
+        uses: actions/checkout@v4  
 
       - name: 构建矩阵  
         id: set-matrix  
         run: |  
           git clone -b lede --single-branch https://github.com/somemoo/OpenWrt-packages.git  
-          cd OpenWrt-packages   
-          targets=$(ls luci-app-* | tr '\n' ',' | sed 's/,$//')  
-          echo "::set-output name=matrix::[{\"target\":\"${targets}\"}]"  
-          cd ..   
+          cd OpenWrt-packages  
+          targets=$(find . -maxdepth 1 -name 'luci-app-*' -type d -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "matrix=${targets}" >> $GITHUB_OUTPUT
+          cd ..  
           rm -rf OpenWrt-packages  
 
   build:  
@@ -30,89 +30,72 @@ jobs:
     runs-on: ubuntu-latest  
     needs: matrix  
     strategy:  
-      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}  
+      matrix: 
+        target: ${{ fromJson(needs.matrix.outputs.matrix) }}
       fail-fast: false  
 
     steps:  
     - name: 检出代码  
-      uses: actions/checkout@main  
+      uses: actions/checkout@v4  
 
     - name: 加载环境  
       env:  
         DEBIAN_FRONTEND: noninteractive  
       run: |  
-        sudo -E apt-get -qq update  
-        sudo -E apt-get -qq install build-essential clang llvm flex g++ gawk gcc-multilib gettext \
-        git libncurses5-dev libssl-dev python3 python3-pyelftools python3-setuptools \
-        libpython3-dev rsync unzip zlib1g-dev swig aria2 jq subversion qemu-utils ccache rename \
-        libelf-dev device-tree-compiler libgnutls28-dev coccinelle libgmp3-dev libmpc-dev  
-        sudo -E apt-get -qq purge azure-cli ghc* zulu* firefox powershell openjdk* dotnet* google* mysql* php* android*  
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc  
-        sudo -E apt-get -qq autoremove --purge  
-        sudo -E apt-get -qq clean  
-    
+        sudo apt-get update -qq  
+        sudo apt-get install -qq --no-install-recommends \
+          build-essential clang llvm flex g++ gawk gcc-multilib gettext \
+          git libncurses5-dev libssl-dev python3 python3-pyelftools python3-setuptools \
+          rsync unzip zlib1g-dev jq subversion qemu-utils ccache \
+          libelf-dev device-tree-compiler libgmp3-dev libmpc-dev  
+        sudo apt-get autoremove --purge -qq  
+        sudo rm -rf /var/lib/apt/lists/*  
+
     - name: 设置变量  
       id: ENV  
-      run: |  
-        echo "date=$(date +'%m.%d')" >> $GITHUB_ENV  
-      
+      run: echo "date=$(date +'%m.%d')" >> $GITHUB_ENV  
+
     - name: 准备SDK  
       run: |  
-        wget https://downloads.immortalwrt.org/releases/23.05-SNAPSHOT/targets/x86/64/immortalwrt-sdk-23.05-SNAPSHOT-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz  
-        mkdir OpenWrt && tar xf immortalwrt-*.xz && rm immortalwrt-*.xz  
-        mv immortalwrt-*/* OpenWrt && rm -rf immortalwrt-*  
-    
+        sdk_url="https://downloads.immortalwrt.org/releases/23.05-SNAPSHOT/targets/x86/64/immortalwrt-sdk-23.05-SNAPSHOT-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"  
+        wget -q "$sdk_url"  
+        mkdir OpenWrt  
+        tar -xf immortalwrt-*.tar.xz -C OpenWrt --strip-components=1  
+        rm -f immortalwrt-*.tar.xz  
+
     - name: 编译 po2lmo  
       run: |  
         cd OpenWrt  
-        git clone https://github.com/openwrt-dev/po2lmo.git  
-        pushd po2lmo  
-        make && sudo make install  
-        popd  
-    
-    - name: 克隆项目   
+        git clone -q https://github.com/openwrt-dev/po2lmo.git  
+        (cd po2lmo && make -j$(nproc) && sudo make install)  
+        rm -rf po2lmo  
+
+    - name: 准备软件  
       run: |  
         cp -rf App/. OpenWrt/  
         cd OpenWrt  
-        ./scripts/feeds update -a && rm -rf feeds/luci/applications/luci-app-*  
-        git clone -b lede https://github.com/somemoo/OpenWrt-packages packages && mv -n packages/* package && rm -rf {packages,package/golang}  
+        rm -rf feeds/luci/applications/luci-app-*  
+        git clone -b lede --depth 1 https://github.com/somemoo/OpenWrt-packages packages  
+        mv -n packages/* package/  
+        rm -rf packages   
+        ./scripts/feeds update -a  
         ./scripts/feeds install ${{ matrix.target }}  
-        
-        # 检查当前目录下是否存在目标文件  
-        if [ -f "${{ matrix.target }}" ]; then  
-          chmod +x "${{ matrix.target }}"  
-          /bin/bash ./"${{ matrix.target }}"  
-        else  
-          echo "${{ matrix.target }} 文件不存在，无法执行。"  
-        fi  
-
         echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config  
-        du -h --max-depth=4 ./package  
-    
-    - name: 下载依赖包  
-      id: package  
-      run: |  
-        cd OpenWrt  
         make defconfig  
-        make download -j16  
-        
-    - name: 开始编译  
-      run: |   
-        cd OpenWrt  
-        make package/${{ matrix.target }}/compile V=sc  
-        du -h --max-depth=4 ./bin  
-        
-    - name: 准备 ipk  
+
+    - name: 下载依赖  
+      run: make -j$(nproc) download  
+
+    - name: 编译 IPK  
+      run: make package/${{ matrix.target }}/compile -j$(nproc) V=s  
+
+    - name: 收集 IPK  
       run: |  
-        cd OpenWrt  
-        mkdir -p ./artifact/IPK  
-        find ./bin/packages/*/*/ -maxdepth 1 -type f -name "*.ipk" | xargs -i mv -f {} ./artifact/IPK/  
-        cd ./artifact/IPK  
-        echo "IPK=$PWD" >> $GITHUB_ENV  
-        
-    - name: 上传ipk  
+        mkdir -p artifact  
+        find ./bin/packages -name '*.ipk' -exec cp {} artifact/ \;  
+
+    - name: 上传 IPK  
       uses: actions/upload-artifact@v4  
-      id: upipk  
       with:  
-        name: ${{ env.date }} ${{ matrix.target }}  
-        path: ${{ env.IPK }}/
+        name: ${{ env.date }}_${{ matrix.target }}  
+        path: OpenWrt/artifact/*.ipk  
