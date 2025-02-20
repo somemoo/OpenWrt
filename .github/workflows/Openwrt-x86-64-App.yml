@@ -50,6 +50,8 @@ jobs:
           libelf-dev device-tree-compiler libgmp3-dev libmpc-dev  
         sudo apt-get autoremove --purge -qq  
         sudo rm -rf /var/lib/apt/lists/*  
+        git clone --depth=1 https://github.com/openwrt-dev/po2lmo  
+        (cd po2lmo && sudo make && sudo make install)  
 
     - name: 设置变量  
       id: ENV  
@@ -62,13 +64,6 @@ jobs:
         mkdir OpenWrt  
         tar -xf immortalwrt-*.tar.xz -C OpenWrt --strip-components=1  
         rm -f immortalwrt-*.tar.xz  
-
-    - name: 编译 po2lmo  
-      run: |  
-        cd OpenWrt  
-        git clone https://github.com/openwrt-dev/po2lmo.git  
-        (cd po2lmo && make -j$(nproc) && sudo make install)  
-        rm -rf po2lmo  
 
     - name: 准备软件  
       run: |  
