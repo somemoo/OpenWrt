@@ -262,12 +262,12 @@ jobs:
             LOG_FILE="firmware/${{ matrix.target }}_make_error.log"
             if [ -f "$LOG_FILE" ]; then
               WERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\\"/g; s/\*/\>/g; s/$/\<br><br>/')
-              TERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\"/g; s/$/\\n/')
+              TERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/$/\\n/')
             else
               ERROR_LOG="未找到日志文件"
             fi
             MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
-            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志:</summary><pre>${WERROR_LOG}</pre></details>\n📝查看完整日志请下载Artifacts"
+            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志：点击展开</summary><pre>${WERROR_LOG}</pre></details>\n📝查看完整日志请下载Artifacts"
             TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n📝错误日志：\n<pre>${TERROR_LOG}</pre>\n📝查看完整日志请下载Artifacts"
           else  
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
