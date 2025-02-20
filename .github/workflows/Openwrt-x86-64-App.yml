@@ -81,9 +81,8 @@ jobs:
           echo "${{ matrix.target }} 文件不存在，无法执行。"  
         fi  
         echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config  
-        du -h --max-depth=4 ./package  
     
-    - name: 下载依赖包  
+    - name: 下载依赖  
       id: package  
       run: |  
         cd OpenWrt  
@@ -94,7 +93,6 @@ jobs:
       run: |   
         cd OpenWrt  
         make package/${{ matrix.target }}/compile -j$(nproc) V=s  
-        du -h --max-depth=4 ./bin  
         
     - name: 准备 ipk  
       run: |  
