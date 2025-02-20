@@ -65,32 +65,48 @@ jobs:
         tar -xf immortalwrt-*.tar.xz -C OpenWrt --strip-components=1  
         rm -f immortalwrt-*.tar.xz  
 
-    - name: 准备软件  
+    - name: 克隆项目  
       run: |  
         cp -rf App/. OpenWrt/  
         cd OpenWrt  
-        rm -rf feeds/luci/applications/luci-app-*  
-        git clone -b lede --depth 1 https://github.com/somemoo/OpenWrt-packages packages  
-        mv -n packages/* package/  
-        rm -rf packages   
-        ./scripts/feeds update -a  
+        ./scripts/feeds update -a && rm -rf feeds/luci/applications/luci-app-*  
+        git clone -b lede https://github.com/somemoo/OpenWrt-packages packages && mv -n packages/* package && rm -rf {packages,package/golang}  
         ./scripts/feeds install ${{ matrix.target }}  
+        
+        # 检查当前目录下是否存在目标文件  
+        if [ -f "${{ matrix.target }}" ]; then  
+          chmod +x "${{ matrix.target }}"  
+          /bin/bash ./"${{ matrix.target }}"  
+        else  
+          echo "${{ matrix.target }} 文件不存在，无法执行。"  
+        fi  
         echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config  
-        make defconfig  
-
-    - name: 下载依赖  
-      run: make -j$(nproc) download  
-
-    - name: 编译 IPK  
-      run: make package/${{ matrix.target }}/compile -j$(nproc) V=s  
-
-    - name: 收集 IPK  
+        du -h --max-depth=4 ./package  
+    
+    - name: 下载依赖包  
+      id: package  
       run: |  
-        mkdir -p artifact  
-        find ./bin/packages -name '*.ipk' -exec cp {} artifact/ \;  
-
-    - name: 上传 IPK  
+        cd OpenWrt  
+        make defconfig  
+        make -j$(nproc) download   
+        
+    - name: 开始编译  
+      run: |   
+        cd OpenWrt  
+        make package/${{ matrix.target }}/compile -j$(nproc) V=s  
+        du -h --max-depth=4 ./bin  
+        
+    - name: 准备 ipk  
+      run: |  
+        cd OpenWrt  
+        mkdir -p ./artifact/IPK  
+        find ./bin/packages/*/*/ -maxdepth 1 -type f -name "*.ipk" | xargs -i mv -f {} ./artifact/IPK/  
+        cd ./artifact/IPK  
+        echo "IPK=$PWD" >> $GITHUB_ENV  
+        
+    - name: 上传 ipk  
       uses: actions/upload-artifact@v4  
+      id: upipk  
       with:  
-        name: ${{ env.date }}_${{ matrix.target }}  
-        path: OpenWrt/artifact/*.ipk  
+        name: ${{ env.date }} ${{ matrix.target }}  
+        path: ${{ env.IPK }}/
