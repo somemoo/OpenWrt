@@ -1,7 +1,7 @@
 # 编译状态
 
-![Openwrt-AppBuild-X86/64](https://github.com/somemoo/OpenWrt/workflows/Openwrt-x86-64-App/badge.svg)
-![Openwrt-AppBuild](https://github.com/somemoo/OpenWrt/workflows/Openwrt-AutoBuild/badge.svg)
+![Openwrt-AppBuild](https://github.com/somemoo/OpenWrt/workflows/Openwrt-AppBuild/badge.svg)
+![Openwrt-AutoBuild](https://github.com/somemoo/OpenWrt/workflows/Openwrt-AutoBuild/badge.svg)
 [![](https://img.shields.io/github/release-pre/somemoo/OpenWrt.svg)](https://github.com/somemoo/OpenWrt/releases)
 [![](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/somemoo/OpenWrt)
 
