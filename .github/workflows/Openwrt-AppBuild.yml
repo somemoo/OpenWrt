@@ -58,6 +58,7 @@ jobs:
           libelf-dev device-tree-compiler libgmp3-dev libmpc-dev  
         sudo apt-get autoremove --purge -qq  
         sudo rm -rf /var/lib/apt/lists/*  
+        sudo timedatectl set-timezone "Asia/Shanghai"  
         git clone --depth=1 https://github.com/openwrt-dev/po2lmo  
         (cd po2lmo && sudo make && sudo make install)  
 
