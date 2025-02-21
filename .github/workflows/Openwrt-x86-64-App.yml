@@ -20,7 +20,12 @@ jobs:
         run: |  
           git clone -b lede --single-branch https://github.com/somemoo/OpenWrt-packages.git  
           cd OpenWrt-packages  
-          targets=$(find . -maxdepth 1 -name 'luci-app-*' -type d -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          targets=$(find . -maxdepth 1 -type d -name 'luci-app-*' \
+            -not -name 'luci-app-smartdns' \
+            -not -name 'luci-app-oaf' \
+            -not -name 'luci-app-bypass' \
+            -not -name 'luci-app-ssr-plus' \
+            -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
           echo "matrix=${targets}" >> $GITHUB_OUTPUT
           cd ..  
           rm -rf OpenWrt-packages  
