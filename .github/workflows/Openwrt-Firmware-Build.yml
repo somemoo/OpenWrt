@@ -9,6 +9,14 @@ name: Openwrt-Firmware-Build
 
 on:
   workflow_dispatch:
+    inputs:
+      Cache:
+        description: '输入 "false" 清除缓存（默认保留缓存）'
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+        
   schedule:
     - cron: "5 19 1/2 * *"
   watch:
@@ -137,7 +145,7 @@ jobs:
           ccache: 'true'
           mixkey: ${{ matrix.target }}
           prefix: ${{ github.workspace }}/OpenWrt
-          clean: ${{ contains(github.event.action, 'nocache') }}
+          clean: ${{ github.event.inputs.Cache == 'true' }}
 
       - name: 清理文件
         run: |
