@@ -130,6 +130,20 @@ jobs:
         run: |
           cd OpenWrt
           find "${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/patches" -name "*.patch" 2>/dev/null | xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
+      
+      - name: 配置缓存
+        uses: stupidloud/cachewrtbuild@main
+        with:
+          ccache: 'true'
+          mixkey: ${{ matrix.target }}
+          prefix: ${{ github.workspace }}/OpenWrt
+          clean: ${{ contains(github.event.action, 'nocache') }}
+
+      - name: 清理文件
+        run: |
+          shopt -s extglob
+          cd OpenWrt
+          rm -rf staging_dir/!(*x86_* || *aarch64_* || *mipsel_* || *mips_* || *arm_*|host|hostpkg) build_dir/!(*x86_* || *aarch64_* || *mipsel_* || *mips_* || *arm_*|host|hostpkg) 2>/dev/null
 
       - name: 下载依赖
         run: |
@@ -177,6 +191,7 @@ jobs:
             fi
           fi
           if [ ! -e "$FULL_LOG" ]; then
+            rm -rf staging_dir/toolchain-*/{initial,bin/*-lto-dump}
             echo "::group::📊 空间使用情况"
             df -hT | grep -v 'tmpfs\|boot'
             echo "::endgroup::"
