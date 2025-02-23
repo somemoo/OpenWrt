@@ -144,7 +144,7 @@ jobs:
           shopt -s extglob
           cd OpenWrt
           if find staging_dir -type d \( -name '*x86_*' -o -name '*aarch64_*' -o -name '*mipsel_*' -o -name '*mips_*' -o -name '*arm_*' \) -exec test -d '{}/bin' \; -print -quit; then  
-            rm -rf staging_dir/!(x86_*|aarch64_*|mipsel_*|mips_*|arm_*|host|hostpkg) build_dir/!(x86_*|aarch64_*|mipsel_*|mips_*|arm_*|host|hostpkg) 2>/dev/null  
+            rm -rf staging_dir/!(*x86_*|*aarch64_*|*mipsel_*|*mips_*|*arm_*|host|hostpkg) build_dir/!(*x86_*|*aarch64_*|*mipsel_*|*mips_*|*arm_*|host|hostpkg) 2>/dev/null  
           fi
 
 
