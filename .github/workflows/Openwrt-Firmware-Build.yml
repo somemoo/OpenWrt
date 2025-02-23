@@ -155,7 +155,6 @@ jobs:
             rm -rf staging_dir/!(*x86_*|*aarch64_*|*mipsel_*|*mips_*|*arm_*|host|hostpkg) build_dir/!(*x86_*|*aarch64_*|*mipsel_*|*mips_*|*arm_*|host|hostpkg) 2>/dev/null  
           fi
 
-
       - name: 下载依赖
         run: |
           cd OpenWrt
