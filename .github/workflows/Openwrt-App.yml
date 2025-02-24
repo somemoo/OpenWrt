@@ -23,8 +23,8 @@ jobs:
     strategy:  
       fail-fast: false  
       matrix:  
-        target: ${{ fromJSON(format('[ {0} ]', split(github.event.inputs.Target, ','))) }}
-        arch: ${{ fromJSON(format('[ {0} ]', split(github.event.inputs.Arch, ','))) }}
+        target: ${{ fromJson(format('[{0}]', github.event.inputs.Target)) }}
+        arch: ${{ fromJson(format('[{0}]', github.event.inputs.Arch)) }}
         
     steps:  
     - name: Checkout  
