@@ -1,14 +1,15 @@
 name: Build-App  
+
 on:
   workflow_dispatch:
     inputs:
       Target:
-        description: '输入要编译的IPK包名 (多个用逗号分隔)'
-        default: 'luci-app-mosdns'
+        description: '输入包名 (多名字输入： ["luci-app-mosdns","luci-app-dockerman"])'
+        default: '["luci-app-mosdns"]'
         type: string
       Arch:
-        description: '输入架构 (多个用逗号分隔，可选架构：x86/64,ipq40xx/generic,ramips/mt7621,ath79/generic,sunxi/cortexa7,bcm27xx/bcm2711,mediatek/mt7622,ar71xx/generic,lantiq/xrx200,rockchip/armv8,mvebu/cortexa9,realtek/rtl838x,armvirt/64,oxnas/generic,brcm47xx/generic,ipq806x/generic,zynq/mpsoc)'
-        default: 'x86/64,ipq40xx/generic'
+        description: '输入架构 (多架构输入： ["x86/64","ipq40xx/generic"];可选架构：x86/64,ipq40xx/generic,ramips/mt7621,ath79/generic,sunxi/cortexa7,bcm27xx/bcm2711,mediatek/mt7622,ar71xx/generic,lantiq/xrx200,rockchip/armv8,mvebu/cortexa9,realtek/rtl838x,armvirt/64,oxnas/generic,brcm47xx/generic,ipq806x/generic,zynq/mpsoc)'
+        default: '["x86/64"]'
         type: string
   
 env:
@@ -17,14 +18,11 @@ env:
 jobs:  
   build:  
     runs-on: ubuntu-latest  
-    if: github.event.repository.owner.id == github.event.sender.id || !github.event.sender.id  
-    
-    name: Build ${{ matrix.target }}-${{ matrix.arch }}
     strategy:  
       fail-fast: false  
       matrix:  
-        target: ${{ fromJson(format('[{0}]', github.event.inputs.Target)) }}
-        arch: ${{ fromJson(format('[{0}]', github.event.inputs.Arch)) }}
+        target: ${{ fromJSON(github.event.inputs.Target) }}
+        arch: ${{ fromJSON(github.event.inputs.Arch) }}
         
     steps:  
     - name: Checkout  
