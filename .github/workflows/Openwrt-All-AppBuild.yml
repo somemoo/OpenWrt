@@ -55,7 +55,7 @@ jobs:
               git clone -b $BRANCH --single-branch $REPO_URL OpenWrt-packages
               cd OpenWrt-packages
               
-              if [ ! -d "package/$PACKAGE_INPUT" ]; then
+              if [ ! -d "$PACKAGE_INPUT" ]; then
                 echo "::error::包 '$PACKAGE_INPUT' 在以下仓库中均不存在："
                 echo "1. https://github.com/somemoo/OpenWrt-packages"
                 echo "2. https://github.com/kiddin9/kwrt-packages"
