@@ -4,17 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       Target:
-        description: '选择 "true" 清除缓存（默认保留缓存）'
-        required: true
-        default: 'false'
-        type: choice
-        options: ['true', 'false']
+        description: '输入要编译的IPK'
+        default: 'luci-app-mosdns'
       Arch:
-        description: '选择 "true" 清除缓存（默认保留缓存）'
-        required: true
-        default: 'false'
+        description: '选择架构'
+        default: 'x86/64'
         type: choice
-        options: ['true', 'false']
+        options: ['x86/64','ipq40xx/generic','ramips/mt7621','ath79/generic','sunxi/cortexa7','bcm27xx/bcm2711','mediatek/mt7622','ar71xx/generic','lantiq/xrx200','rockchip/armv8','mvebu/cortexa9','realtek/rtl838x','armvirt/64','oxnas/generic','brcm47xx/generic','ipq806x/generic','zynq/mpsoc']
   
 env:
   TZ: Asia/Shanghai  
@@ -28,8 +24,8 @@ jobs:
     strategy:  
       fail-fast: false  
       matrix:  
-        target: [luci-app-mosdns]
-        arch: ['x86/64', 'ipq40xx/generic']
+        target: [${{ github.event.inputs.Target }}]
+        arch: [${{ github.event.inputs.Arch }}]
         
     steps:  
     - name: Checkout  
