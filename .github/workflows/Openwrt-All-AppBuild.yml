@@ -137,7 +137,7 @@ jobs:
         if [[ "$REPO_URL" == *"kiddin9"* ]]; then
           git clone -b main $REPO_URL packages
           mv packages/* package/
-          rm -rf {.github,.gitignore,LICENSE,README.md}
+          rm -rf {.github,.gitignore,LICENSE,README.md,aria2，luci-app-aria2}
         else
           git clone -b lede $REPO_URL packages 
           mv packages/* package/
