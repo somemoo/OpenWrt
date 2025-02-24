@@ -1,9 +1,22 @@
+#=================================================  
+# https://github.com/somemoo/OpenWrt  
+# 描述: 可选单架构构建多个IPK（一个或多个仓库）
+# 许可证: MIT  
+# 作者: vison.v   
+#================================================= 
+
 name: Openwrt-AppBuild
 
 on:   
   #schedule:  
   #  - cron: "5 20 1/10 * *" 
-  workflow_dispatch:  
+  workflow_dispatch:
+    inputs:
+      Arch:
+        description: '输入架构 ath79/generic,sunxi/cortexa7,bcm27xx/bcm2711,mediatek/mt7622,ar71xx/generic,lantiq/xrx200,rockchip/armv8,mvebu/cortexa9,realtek/rtl838x,armvirt/64,oxnas/generic,brcm47xx/generic,ipq806x/generic,zynq/mpsoc)'
+        default: '["x86/64"]'
+        type: choice
+        options: ['ipq40xx/generic', 'ramips/mt7621']
   
 env:
   TZ: Asia/Shanghai
@@ -34,12 +47,13 @@ jobs:
           rm -rf OpenWrt-packages  
 
   build:  
-    name: 构建 ${{ matrix.target }}  
+    name: 构建 ${{ env.arch_path }}-${{ matrix.target }}  
     runs-on: ubuntu-latest  
     needs: matrix  
     strategy:  
       matrix: 
         target: ${{ fromJson(needs.matrix.outputs.matrix) }}
+        arch: ${{ fromJSON(github.event.inputs.Arch) }}
       fail-fast: false  
 
     steps:  
@@ -64,15 +78,16 @@ jobs:
 
     - name: 设置变量  
       id: ENV  
-      run: echo "date=$(date +'%m.%d')" >> $GITHUB_ENV  
-
+      run: |  
+        echo "date=$(date +'%m.%d')" >> $GITHUB_ENV  
+        echo "arch_path=$(echo ${{ matrix.arch }} | tr '/' '-')" >> $GITHUB_ENV
+      
     - name: 准备SDK  
       run: |  
-        sdk_url="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/x86/64/immortalwrt-sdk-24.10-SNAPSHOT-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst"  
-        wget -q "$sdk_url"  
-        mkdir OpenWrt  
-        tar -I 'zstd -d' -xf immortalwrt-*.tar.zst -C OpenWrt --strip-components=1  
-        rm -f immortalwrt-*.tar.zst  
+        SDK_URL1="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/${{ matrix.arch }}/immortalwrt-sdk-24.10-SNAPSHOT-${{ env.arch_path }}_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
+        SDK_URL2="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/${{ matrix.arch }}/immortalwrt-sdk-24.10-SNAPSHOT-${{ env.arch_path }}_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
+        wget --spider -q "$SDK_URL1" && wget "$SDK_URL1" || wget "$SDK_URL2"
+        mkdir OpenWrt-${{ env.arch_path }} && tar -I 'zstd -d' -xf immortalwrt-*.tar.zst -C OpenWrt-${{ env.arch_path }} --strip-components 1 && rm immortalwrt-*.tar.zst 
 
     - name: 克隆项目  
       run: |  
@@ -115,5 +130,5 @@ jobs:
       uses: actions/upload-artifact@v4  
       id: upipk  
       with:  
-        name: ${{ env.date }} ${{ matrix.target }}  
+        name: ${{ env.date }} (${{ env.arch_path }})-${{ matrix.target }}  
         path: ${{ env.IPK }}/
