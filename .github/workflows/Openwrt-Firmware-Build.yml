@@ -336,7 +336,7 @@ jobs:
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' }}
         with:
-          keep_latest: 15
+          keep_latest: 5
           delete_tags: true
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
