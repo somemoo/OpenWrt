@@ -137,7 +137,7 @@ jobs:
         if [[ "$REPO_URL" == *"kiddin9"* ]]; then
           git clone -b main $REPO_URL packages
           mv packages/* package/
-          rm -rf {.github,.gitignore,LICENSE,README.md}
+          rm -rf {packages,.github,.gitignore,LICENSE,README.md}
           mkdir -p feeds/base/aria2 && cp -rf package/aria2/Config.in feeds/base/aria2/Config.in
         else
           git clone -b lede $REPO_URL packages 
