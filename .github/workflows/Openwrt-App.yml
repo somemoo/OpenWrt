@@ -1,9 +1,20 @@
 name: Build-App  
 
-on:   
-  #schedule:  
-  #  - cron: "5 20 1/10 * *"  
-  workflow_dispatch:  
+on:
+  workflow_dispatch:
+    inputs:
+      Target:
+        description: '选择 "true" 清除缓存（默认保留缓存）'
+        required: true
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
+      Arch:
+        description: '选择 "true" 清除缓存（默认保留缓存）'
+        required: true
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
   
 env:
   TZ: Asia/Shanghai  
