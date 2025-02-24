@@ -1,6 +1,6 @@
 #=================================================  
 # https://github.com/somemoo/OpenWrt  
-# 描述: 可选单架构构建多个IPK（一个或多个仓库）
+# 描述: 支持多仓库回退的IPK构建流程
 # 许可证: MIT  
 # 作者: vison.v   
 #================================================= 
@@ -8,8 +8,6 @@
 name: Openwrt-AppBuild
 
 on:   
-  #schedule:  
-  #  - cron: "5 20 1/10 * *" 
   workflow_dispatch:
     inputs:
       Arch:
@@ -17,6 +15,10 @@ on:
         default: 'x86/64'
         type: choice
         options: ['x86/64', 'ipq40xx/generic', 'ipq806x/generic', 'ramips/mt7620', 'ramips/mt7621', 'ramips/mt76x8', 'ramips/rt288x', 'ramips/rt305x', 'ramips/rt3883', 'ath79/generic', 'sunxi/cortexa7', 'sunxi/cortexa8', 'sunxi/cortexa53', 'bcm27xx/bcm2708', 'bcm27xx/bcm2709', 'bcm27xx/bcm2710', 'bcm27xx/bcm2711', 'bcm27xx/bcm2712', 'bcm47xx/generic', 'mediatek/mt7622', 'mediatek/mt7623', 'mediatek/mt7629', 'lantiq/xrx200', 'rockchip/armv8', 'mvebu/cortexa9', 'realtek/rtl838x', 'realtek/rtl839x', 'realtek/rtl930x', 'realtek/rtl931x', 'zynq/generic']
+      Package:
+        description: '输入要构建的包名 (例如: luci-app-adguardhome)'
+        required: false
+        type: string
   
 env:
   TZ: Asia/Shanghai
@@ -27,6 +29,7 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id || !github.event.sender.id   
     outputs:  
       matrix: ${{ steps.set-matrix.outputs.matrix }}  
+      repo_url: ${{ steps.set-matrix.outputs.repo_url }}
     steps:  
       - name: 检出代码  
         uses: actions/checkout@v4  
@@ -34,15 +37,49 @@ jobs:
       - name: 构建矩阵  
         id: set-matrix  
         run: |  
-          git clone -b lede --single-branch https://github.com/somemoo/OpenWrt-packages.git  
-          cd OpenWrt-packages  
-          targets=$(find . -maxdepth 1 -type d -name 'luci-app-*' \
-            -not -name 'luci-app-smartdns' \
-            -not -name 'luci-app-oaf' \
-            -not -name 'luci-app-bypass' \
-            -not -name 'luci-app-ssr-plus' \
-            -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          echo "matrix=${targets}" >> $GITHUB_OUTPUT
+          PACKAGE_INPUT="${{ github.event.inputs.Package }}"
+          REPO_URL="https://github.com/somemoo/OpenWrt-packages"
+          BRANCH="lede"
+          
+          # 检查主仓库
+          git clone -b $BRANCH --single-branch $REPO_URL OpenWrt-packages
+          cd OpenWrt-packages
+          
+          if [ -n "$PACKAGE_INPUT" ]; then
+            if [ ! -d "$PACKAGE_INPUT" ]; then
+              # 主仓库不存在则尝试备用仓库
+              cd ..
+              rm -rf OpenWrt-packages
+              REPO_URL="https://github.com/kiddin9/kwrt-packages"
+              BRANCH="main"
+              git clone -b $BRANCH --single-branch $REPO_URL OpenWrt-packages
+              cd OpenWrt-packages
+              
+              if [ ! -d "package/$PACKAGE_INPUT" ]; then
+                echo "::error::包 '$PACKAGE_INPUT' 在以下仓库中均不存在："
+                echo "1. https://github.com/somemoo/OpenWrt-packages"
+                echo "2. https://github.com/kiddin9/kwrt-packages"
+                exit 1
+              fi
+            fi
+          fi
+
+          # 生成目标列表
+          if [ -n "$PACKAGE_INPUT" ]; then
+            targets_json=$(echo "$PACKAGE_INPUT" | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          else
+            find_cmd="find . -maxdepth 2 -type d -name 'luci-app-*'"
+            [ "$REPO_URL" = "https://github.com/kiddin9/kwrt-packages" ] && find_cmd="find package -maxdepth 1 -type d -name 'luci-app-*'"
+            
+            targets=$(eval $find_cmd \
+              -not -name 'luci-app-smartdns' \
+              -not -name 'luci-app-oaf' \
+              -printf '%f\n')
+            targets_json=$(echo "$targets" | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          fi
+
+          echo "matrix=$targets_json" >> $GITHUB_OUTPUT
+          echo "repo_url=$REPO_URL" >> $GITHUB_OUTPUT
           cd ..  
           rm -rf OpenWrt-packages  
 
@@ -55,6 +92,8 @@ jobs:
         target: ${{ fromJson(needs.matrix.outputs.matrix) }}
         arch: ["${{ github.event.inputs.Arch }}"]
       fail-fast: false  
+    env:
+      REPO_URL: ${{ needs.matrix.outputs.repo_url }}
 
     steps:  
     - name: 检出代码  
@@ -93,17 +132,27 @@ jobs:
       run: |  
         cp -rf App/. OpenWrt-${{ env.arch_path }}/  
         cd OpenWrt-${{ env.arch_path }}  
-        ./scripts/feeds update -a && rm -rf feeds/luci/applications/luci-app-*  
-        git clone -b lede https://github.com/somemoo/OpenWrt-packages packages && mv -n packages/* package && rm -rf {packages,package/golang}  
+        
+        # 根据仓库类型处理路径
+        if [[ "$REPO_URL" == *"kiddin9"* ]]; then
+          git clone -b main $REPO_URL packages
+          mv packages/* package/
+          rm -rf {.github,.gitignore,LICENSE,README.md}
+        else
+          git clone -b lede $REPO_URL packages 
+          mv packages/* package/
+          rm -rf {packages,package/golang}
+        fi
+                  
+        ./scripts/feeds update -a
         ./scripts/feeds install ${{ matrix.target }}  
         
-        if [ -f "${{ matrix.target }}" ]; then  
-          chmod +x "${{ matrix.target }}"  
-          /bin/bash ./"${{ matrix.target }}"  
+        if [ -f "package/${{ matrix.target }}/Makefile" ]; then  
+          echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config  
         else  
-          echo "${{ matrix.target }} 文件不存在，无法执行。"  
+          echo "::error::包 ${{ matrix.target }} 最终不存在于仓库中"  
+          exit 1  
         fi  
-        echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config  
     
     - name: 下载依赖  
       id: package  
@@ -130,4 +179,4 @@ jobs:
       id: upipk  
       with:  
         name: ${{ env.date }} (${{ env.arch_path }})-${{ matrix.target }}
-        path: ${{ env.IPK }}/
+        path: ${{ env.IPK }}
