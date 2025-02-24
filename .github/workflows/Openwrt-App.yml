@@ -11,9 +11,6 @@ on:
         description: '输入架构 (多架构输入： ["x86/64","ipq40xx/generic"];可选架构：x86/64,ipq40xx/generic,ramips/mt7621,ath79/generic,sunxi/cortexa7,bcm27xx/bcm2711,mediatek/mt7622,ar71xx/generic,lantiq/xrx200,rockchip/armv8,mvebu/cortexa9,realtek/rtl838x,armvirt/64,oxnas/generic,brcm47xx/generic,ipq806x/generic,zynq/mpsoc)'
         default: '["x86/64"]'
         type: string
-  
-env:
-  TZ: Asia/Shanghai  
 
 jobs:  
   build:  
