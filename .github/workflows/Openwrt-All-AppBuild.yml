@@ -165,7 +165,7 @@ jobs:
         rm -Rf feeds/base
         mv -f feeds/base.bak feeds/base
         mv -f feeds/packages.bak feeds/packages  
-        make -j$(nproc) download  
+        #make -j$(nproc) download  
         
     - name: 开始编译  
       run: |   
