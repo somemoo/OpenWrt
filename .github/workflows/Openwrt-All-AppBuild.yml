@@ -159,7 +159,12 @@ jobs:
       id: package  
       run: |  
         cd OpenWrt-${{ env.arch_path }}  
-        make defconfig  
+        mv -f feeds/base feeds/base.bak
+        mv -f feeds/packages feeds/packages.bak
+        make defconfig
+        rm -Rf feeds/base
+        mv -f feeds/base.bak feeds/base
+        mv -f feeds/packages.bak feeds/packages  
         make -j$(nproc) download  
         
     - name: 开始编译  
