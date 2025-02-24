@@ -47,7 +47,7 @@ jobs:
           rm -rf OpenWrt-packages  
 
   build:  
-    name: 构建 ${{ env.arch_path }}-${{ matrix.target }}  
+    name: 构建 ${{ matrix.target }}-(${{ matrix.arch }})  
     runs-on: ubuntu-latest  
     needs: matrix  
     strategy:  
