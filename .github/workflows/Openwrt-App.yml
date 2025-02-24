@@ -11,11 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       Target:
-        description: '输入包名 (多名字输入： ["luci-app-mosdns","luci-app-dockerman"])'
+        description: '输入包名 (多名字输入，形式如下： ["luci-app-mosdns","luci-app-dockerman"])'
         default: '["luci-app-mosdns"]'
         type: string
       Arch:
-        description: '输入架构 (多架构输入： ["x86/64","ipq40xx/generic"];可选架构：x86/64,ipq40xx/generic,ramips/mt7621,ath79/generic,sunxi/cortexa7,bcm27xx/bcm2711,mediatek/mt7622,ar71xx/generic,lantiq/xrx200,rockchip/armv8,mvebu/cortexa9,realtek/rtl838x,armvirt/64,oxnas/generic,brcm47xx/generic,ipq806x/generic,zynq/mpsoc)'
+        #可能架构："ipq40xx/generic","ipq806x/generic","ramips/mt7620","ramips/mt7621","ramips/mt76x8","ramips/rt288x","ramips/rt305x","ramips/rt3883","ath79/generic","sunxi/cortexa7","sunxi/cortexa8","sunxi/cortexa53","bcm27xx/bcm2708","bcm27xx/bcm2709","bcm27xx/bcm2710","bcm27xx/bcm2711","bcm27xx/bcm2712","bcm47xx/generic","mediatek/mt7622","mediatek/mt7623","mediatek/mt7629","lantiq/xrx200","rockchip/armv8","mvebu/cortexa9","realtek/rtl838x","realtek/rtl839x","realtek/rtl930x","realtek/rtl931x","zynq/generic"
+        description: '输入架构 (多架构输入，形式如下： ["x86/64","ipq40xx/generic"])'
         default: '["x86/64"]'
         type: string
 
