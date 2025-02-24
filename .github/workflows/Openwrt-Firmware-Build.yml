@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       Cache:
-        description: '输入 "true" 清除缓存（默认保留缓存）'
+        description: '选择 "true" 清除缓存（默认保留缓存）'
         required: true
         default: 'false'
         type: choice
