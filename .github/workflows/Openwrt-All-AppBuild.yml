@@ -163,9 +163,12 @@ jobs:
         mv -f feeds/packages feeds/packages.bak
         make defconfig
         rm -Rf feeds/base
-        #mv -f feeds/base.bak feeds/base
-        #mv -f feeds/packages.bak feeds/packages  
-        make -j$(nproc) download  
+        mv -f feeds/base.bak feeds/base
+        mv -f feeds/packages.bak feeds/packages  
+        make -j$(nproc) download 
+        mv -f feeds/base feeds/base.bak
+        #mv -f feeds/packages/lang feeds/packages/lang.bak
+        mv -f feeds/packages feeds/packages.bak
         
     - name: 开始编译  
       run: |   
