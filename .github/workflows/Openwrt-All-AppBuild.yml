@@ -68,20 +68,20 @@ jobs:
           if [ -n "$PACKAGE_INPUT" ]; then
             targets_json=$(echo "$PACKAGE_INPUT" | jq -R -s -c 'split("\n") | map(select(. != ""))')
           else
-            find_cmd="find . -maxdepth 2 -type d -name 'luci-app-*'"
-            [ "$REPO_URL" = "https://github.com/kiddin9/kwrt-packages" ] && find_cmd="find package -maxdepth 1 -type d -name 'luci-app-*'"
-            
-            targets=$(eval $find_cmd \
+            if [[ "$REPO_URL" == *"kiddin9"* ]]; then
+              find_cmd="find package -maxdepth 1 -type d -name 'luci-app-*'"
+            else
+              find_cmd="find . -maxdepth 2 -type d -name 'luci-app-*'"
+            fi
+
+            targets_json=$(eval $find_cmd \
               -not -name 'luci-app-smartdns' \
               -not -name 'luci-app-oaf' \
-              -printf '%f\n')
-            targets_json=$(echo "$targets" | jq -R -s -c 'split("\n") | map(select(. != ""))')
+              -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
           fi
 
           echo "matrix=$targets_json" >> $GITHUB_OUTPUT
-          echo "repo_url=$REPO_URL" >> $GITHUB_OUTPUT
-          cd ..  
-          rm -rf OpenWrt-packages  
+          echo "repo_url=$REPO_URL" >> $GITHUB_OUTPUT 
 
   build:  
     name: 构建 ${{ matrix.target }}-(${{ matrix.arch }})  
