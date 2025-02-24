@@ -83,9 +83,18 @@ jobs:
     - name: 下载依赖  
       id: package  
       run: |  
-        cd OpenWrt-${{ env.arch_path }}  
-        make defconfig  
-        make -j$(nproc) download  
+        cd OpenWrt-${{ env.arch_path }}   
+        mv -f feeds/base feeds/base.bak
+        mv -f feeds/packages feeds/packages.bak
+        make defconfig
+        rm -Rf feeds/base
+        mv -f feeds/base.bak feeds/base
+        mv -f feeds/packages.bak feeds/packages  
+        make -j$(nproc) download 
+        mv -f feeds/base feeds/base.bak
+        mv -f feeds/packages feeds/packages.bak
+        #make defconfig  
+        #make -j$(nproc) download  
         
     - name: 开始编译  
       run: |   
