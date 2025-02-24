@@ -68,7 +68,8 @@ jobs:
         cp -rf App/. OpenWrt-${{ env.arch_path }}/  
         cd OpenWrt-${{ env.arch_path }}  
         ./scripts/feeds update -a && rm -rf feeds/luci/applications/luci-app-*  
-        git clone -b lede https://github.com/somemoo/OpenWrt-packages packages && mv -n packages/* package && rm -rf {packages,package/golang}  
+        #git clone -b lede https://github.com/somemoo/OpenWrt-packages packages && mv -n packages/* package && rm -rf {packages,package/golang}  
+        git clone -b main https://github.com/kiddin9/kwrt-packages.git packages && mv -n packages/* package && rm -rf {packages,.github,.gitignore,LICENSE,README.md}  
         ./scripts/feeds install ${{ matrix.target }}  
         
         if [ -f "${{ matrix.target }}" ]; then  
