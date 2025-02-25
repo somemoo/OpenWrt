@@ -140,6 +140,12 @@ jobs:
         rm -Rf feeds/base/package/network/services/!(ppp)
         rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
         rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
+        mv -f feeds/base feeds/base.bak
+        mv -f feeds/packages feeds/packages.bak
+        make defconfig 
+        rm -Rf feeds/base
+        mv -f feeds/base.bak feeds/base
+        mv -f feeds/packages.bak feeds/packages
         
         # 根据仓库类型处理路径
         if [[ "$REPO_URL" == *"kiddin9"* ]]; then
@@ -165,7 +171,9 @@ jobs:
     - name: 下载依赖  
       id: package  
       run: |  
-        cd OpenWrt-${{ env.arch_path }}  
+        cd OpenWrt-${{ env.arch_path }}
+        mv -f feeds/base feeds/base.bak
+        mv -f feeds/packages feeds/packages.bak
         make defconfig 
         make -j$(nproc) download 
         
