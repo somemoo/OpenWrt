@@ -70,12 +70,7 @@ jobs:
           if [ -n "$PACKAGE_INPUT" ]; then
             targets_json=$(echo "$PACKAGE_INPUT" | jq -R -s -c 'split("\n") | map(select(. != ""))')
           else
-            targets_json=$(find . -maxdepth 1 -type d -name 'luci-app-*' \
-              -not -name 'luci-app-smartdns' \
-              -not -name 'luci-app-oaf' \
-              -not -name 'luci-app-bypass' \
-              -not -name 'luci-app-ssr-plus' \
-              -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+            targets_json=$(find . -maxdepth 1 -type d -name 'luci-app-*' -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
           fi
           
           cd ..
@@ -172,12 +167,11 @@ jobs:
         id: package
         run: |
           cd OpenWrt-${{ env.arch_path }}
-          mv -f feeds/base feeds/base.bak
-          mv -f feeds/packages feeds/packages.bak
+          #mv -f feeds/base feeds/base.bak
+          #mv -f feeds/packages feeds/packages.bak
           make defconfig
-          mv -f feeds/packages.bak feeds/packages
-          mv -f feeds/base.bak feeds/base
-          #make -j$(nproc) download
+          #mv -f feeds/packages.bak feeds/packages
+          #mv -f feeds/base.bak feeds/base
 
       - name: 开始编译
         run: |
