@@ -106,7 +106,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -qq --no-install-recommends \
-            build-essential clang llvm flex g++ gawk gcc-multilib gettext \
+            aria2 build-essential clang llvm flex g++ gawk gcc-multilib gettext \
             git libncurses5-dev libssl-dev python3 python3-pyelftools python3-setuptools \
             rsync unzip zstd zlib1g-dev jq subversion qemu-utils ccache \
             libelf-dev device-tree-compiler libgmp3-dev libmpc-dev  
@@ -157,11 +157,6 @@ jobs:
             mv packages/* package/
             rm -rf {packages,package/golang}
           fi
-          
-          for ipk in $(find package/* -maxdepth 0 -type d);
-          do
-             [[ "$(grep "KernelPackage" "$ipk/Makefile")" && ! "$(grep "BuildPackage" "$ipk/Makefile")" ]] && rm -rf $ipk || true
-          done
           
           ./scripts/feeds update -a
           ./scripts/feeds install ${{ matrix.target }}
