@@ -157,7 +157,11 @@ jobs:
             mv packages/* package/
             rm -rf {packages,package/golang}
           fi
-          sed -i 's/$$page\|e$$\?.acl_depends.*\?}//' `find package/luci-*/luasrc/controller/* -name "*.lua"`
+          
+          for ipk in $(find feeds/kiddin9/* -maxdepth 0 -type d);
+          do
+             [[ "$(grep "KernelPackage" "$ipk/Makefile")" && ! "$(grep "BuildPackage" "$ipk/Makefile")" ]] && rm -rf $ipk || true
+          done
           
           ./scripts/feeds update -a
           ./scripts/feeds install ${{ matrix.target }}
