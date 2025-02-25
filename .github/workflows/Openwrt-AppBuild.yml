@@ -66,7 +66,7 @@ jobs:
 
           # 生成目标列表
           if [ -n "$PACKAGE_INPUT" ]; then
-            targets_json=$(echo "$PACKAGE_INPUT" | jq -R -s -c 'split(",") | map(select(. != ""))')
+            targets_json=$(printf "$PACKAGE_INPUT" | jq -R -s -c 'split(",") | map(select(. != ""))')
           else
             targets_json=$(find . -maxdepth 1 -type d -name 'luci-app-*' -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
           fi
