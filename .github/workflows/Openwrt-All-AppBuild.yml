@@ -1,9 +1,12 @@
 # =================================================
-# https://github.com/somemoo/OpenWrt  
-# 描述: 支持多仓库回退的IPK构建流程
+# OpenWrt IPK 多仓库构建工作流
+# 仓库: https://github.com/somemoo/OpenWrt
+# 特性: 支持多仓库回退/架构选择/增量编译
 # 许可证: MIT  
-# 作者: vison.v   
+# 作者: vison.v
 # =================================================
+
+#name: OpenWrt-IPK-Builder
 
 name: Openwrt-All-AppBuild
 
