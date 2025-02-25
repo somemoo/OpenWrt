@@ -129,13 +129,22 @@ jobs:
       run: |  
         cp -rf App/. OpenWrt-${{ env.arch_path }}/  
         cd OpenWrt-${{ env.arch_path }}  
+        rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
+        rm -Rf feeds/luci/modules/!(luci-base)
+        rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
+        rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
+        rm -Rf feeds/packages/net/!(mosquitto|curl)
+        rm -Rf feeds/base/package/firmware
+        rm -Rf feeds/base/package/network/!(services|utils)
+        rm -Rf feeds/base/package/network/services/!(ppp)
+        rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
+        rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
         
         # 根据仓库类型处理路径
         if [[ "$REPO_URL" == *"kiddin9"* ]]; then
           git clone -b main $REPO_URL packages
           mv packages/* package/
           rm -rf {packages,.github,.gitignore,LICENSE,README.md}
-          mkdir -p feeds/base/aria2 && cp -rf package/aria2/Config.in feeds/base/aria2/Config.in
         else
           git clone -b lede $REPO_URL packages 
           mv packages/* package/
@@ -156,16 +165,8 @@ jobs:
       id: package  
       run: |  
         cd OpenWrt-${{ env.arch_path }}  
-        mv -f feeds/base feeds/base.bak
-        mv -f feeds/packages feeds/packages.bak
-        make defconfig
-        rm -Rf feeds/base
-        mv -f feeds/base.bak feeds/base
-        mv -f feeds/packages.bak feeds/packages  
+        make defconfig 
         make -j$(nproc) download 
-        mv -f feeds/base feeds/base.bak
-        #mv -f feeds/packages/lang feeds/packages/lang.bak
-        mv -f feeds/packages feeds/packages.bak
         
     - name: 开始编译  
       run: |   
