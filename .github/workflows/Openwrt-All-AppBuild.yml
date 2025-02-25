@@ -6,9 +6,7 @@
 # 作者: vison.v
 # =================================================
 
-#name: OpenWrt-IPK-Builder
-
-name: Openwrt-All-AppBuild
+name: OpenWrt-IPK-Builder
 
 on: 
   workflow_dispatch:
@@ -177,8 +175,6 @@ jobs:
           mv -f feeds/base feeds/base.bak
           mv -f feeds/packages feeds/packages.bak
           make defconfig
-          #rm -Rf feeds/base
-          #mv -f feeds/base.bak feeds/base
           mv -f feeds/packages.bak feeds/packages
           #make -j$(nproc) download
 
