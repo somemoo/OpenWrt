@@ -143,6 +143,7 @@ jobs:
           #rm -Rf feeds/base/package/network/services/!(ppp)
           #rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
           #rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
+          sed -i '/	refresh_config();/d' scripts/feeds
           
           # 根据仓库类型处理路径
           if [[ "$REPO_URL" == *"kiddin9"* ]]; then
