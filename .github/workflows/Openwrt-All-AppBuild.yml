@@ -159,6 +159,7 @@ jobs:
           
           ./scripts/feeds update -a
           ./scripts/feeds install ${{ matrix.target }}
+          ./scripts/feeds install -a
           
           if [ -f "package/${{ matrix.target }}/Makefile" ]; then
             echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config
