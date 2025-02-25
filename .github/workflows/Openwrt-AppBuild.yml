@@ -58,9 +58,9 @@ jobs:
               cd OpenWrt-packages
               
               if [ ! -d "$PACKAGE_INPUT" ]; then
-                echo "::error::包 '$PACKAGE_INPUT' 在以下仓库中均不存在："
-                echo "::error::1. https://github.com/somemoo/OpenWrt-packages"
-                echo "::error::2. https://github.com/kiddin9/kwrt-packages"
+                echo "::error::包 '$PACKAGE_INPUT' 在以下仓库中均不存在：\n1. https://github.com/somemoo/OpenWrt-packages\n2. https://github.com/kiddin9/kwrt-packages"
+                echo "1. https://github.com/somemoo/OpenWrt-packages"
+                echo "2. https://github.com/kiddin9/kwrt-packages"
                 exit 1
               fi
             fi
