@@ -176,6 +176,7 @@ jobs:
           mv -f feeds/packages feeds/packages.bak
           make defconfig
           mv -f feeds/packages.bak feeds/packages
+          mv -f feeds/base.bak feeds/base
           #make -j$(nproc) download
 
       - name: 开始编译
