@@ -129,17 +129,6 @@ jobs:
       run: |  
         cp -rf App/. OpenWrt-${{ env.arch_path }}/  
         cd OpenWrt-${{ env.arch_path }}
-        ./scripts/feeds update -a
-        rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
-        rm -Rf feeds/luci/modules/!(luci-base)
-        rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
-        rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
-        rm -Rf feeds/packages/net/!(mosquitto|curl)
-        rm -Rf feeds/base/package/firmware
-        rm -Rf feeds/base/package/network/!(services|utils)
-        rm -Rf feeds/base/package/network/services/!(ppp)
-        rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
-        rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
         
         # 根据仓库类型处理路径
         if [[ "$REPO_URL" == *"kiddin9"* ]]; then
@@ -153,6 +142,16 @@ jobs:
         fi
                   
         ./scripts/feeds update -a
+        rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
+        rm -Rf feeds/luci/modules/!(luci-base)
+        rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
+        rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
+        rm -Rf feeds/packages/net/!(mosquitto|curl)
+        rm -Rf feeds/base/package/firmware
+        rm -Rf feeds/base/package/network/!(services|utils)
+        rm -Rf feeds/base/package/network/services/!(ppp)
+        rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
+        rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
         ./scripts/feeds install ${{ matrix.target }}  
         
         if [ -f "package/${{ matrix.target }}/Makefile" ]; then  
