@@ -157,6 +157,7 @@ jobs:
             mv packages/* package/
             rm -rf {packages,package/golang}
           fi
+          sed -i 's/$$page\|e$$\?.acl_depends.*\?}//' `find package/luci-*/luasrc/controller/* -name "*.lua"`
           
           ./scripts/feeds update -a
           ./scripts/feeds install ${{ matrix.target }}
