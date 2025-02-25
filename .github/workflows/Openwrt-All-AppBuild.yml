@@ -162,7 +162,6 @@ jobs:
           
           ./scripts/feeds update -a
           ./scripts/feeds install ${{ matrix.target }}
-          ./scripts/feeds install -a
           
           if [ -f "package/${{ matrix.target }}/Makefile" ]; then
             echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config
@@ -178,10 +177,10 @@ jobs:
           mv -f feeds/base feeds/base.bak
           mv -f feeds/packages feeds/packages.bak
           make defconfig
-          rm -Rf feeds/base
-          mv -f feeds/base.bak feeds/base
+          #rm -Rf feeds/base
+          #mv -f feeds/base.bak feeds/base
           mv -f feeds/packages.bak feeds/packages
-          make -j$(nproc) download
+          #make -j$(nproc) download
 
       - name: 开始编译
         run: |
