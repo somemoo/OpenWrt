@@ -1,42 +1,54 @@
-#=================================================  
+# =================================================
 # https://github.com/somemoo/OpenWrt  
 # 描述: 支持多仓库回退的IPK构建流程
 # 许可证: MIT  
 # 作者: vison.v   
-#================================================= 
+# =================================================
 
 name: Openwrt-All-AppBuild
 
-on:   
+on: 
   workflow_dispatch:
     inputs:
       Arch:
         description: '选择架构'
         default: 'x86/64'
         type: choice
-        options: ['x86/64', 'ipq40xx/generic', 'ipq806x/generic', 'ramips/mt7620', 'ramips/mt7621', 'ramips/mt76x8', 'ramips/rt288x', 'ramips/rt305x', 'ramips/rt3883', 'ath79/generic', 'sunxi/cortexa7', 'sunxi/cortexa8', 'sunxi/cortexa53', 'bcm27xx/bcm2708', 'bcm27xx/bcm2709', 'bcm27xx/bcm2710', 'bcm27xx/bcm2711', 'bcm27xx/bcm2712', 'bcm47xx/generic', 'mediatek/mt7622', 'mediatek/mt7623', 'mediatek/mt7629', 'lantiq/xrx200', 'rockchip/armv8', 'mvebu/cortexa9', 'realtek/rtl838x', 'realtek/rtl839x', 'realtek/rtl930x', 'realtek/rtl931x', 'zynq/generic']
+        options: [
+          'x86/64', 'ipq40xx/generic', 'ipq806x/generic',
+          'ramips/mt7620', 'ramips/mt7621', 'ramips/mt76x8',
+          'ramips/rt288x', 'ramips/rt305x', 'ramips/rt3883',
+          'ath79/generic', 'sunxi/cortexa7', 'sunxi/cortexa8',
+          'sunxi/cortexa53', 'bcm27xx/bcm2708', 'bcm27xx/bcm2709',
+          'bcm27xx/bcm2710', 'bcm27xx/bcm2711', 'bcm27xx/bcm2712',
+          'bcm47xx/generic', 'mediatek/mt7622', 'mediatek/mt7623',
+          'mediatek/mt7629', 'lantiq/xrx200', 'rockchip/armv8',
+          'mvebu/cortexa9', 'realtek/rtl838x', 'realtek/rtl839x',
+          'realtek/rtl930x', 'realtek/rtl931x', 'zynq/generic'
+        ]
       Package:
         description: '输入要构建的包名 (例如: luci-app-adguardhome)'
         required: false
         type: string
-  
+
 env:
   TZ: Asia/Shanghai
 
-jobs:  
-  matrix:  
-    runs-on: ubuntu-latest  
-    if: github.event.repository.owner.id == github.event.sender.id || !github.event.sender.id   
-    outputs:  
-      matrix: ${{ steps.set-matrix.outputs.matrix }}  
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id || !github.event.sender.id
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
       repo_url: ${{ steps.set-matrix.outputs.repo_url }}
-    steps:  
-      - name: 检出代码  
-        uses: actions/checkout@v4  
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
 
-      - name: 构建矩阵  
-        id: set-matrix  
-        run: |  
+      - name: 构建矩阵
+        id: set-matrix
+        run: |
           PACKAGE_INPUT="${{ github.event.inputs.Package }}"
           REPO_URL="https://github.com/somemoo/OpenWrt-packages"
           BRANCH="lede"
@@ -75,120 +87,123 @@ jobs:
               -not -name 'luci-app-ssr-plus' \
               -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
           fi
-          cd ..  
+          
+          cd ..
           rm -rf OpenWrt-packages
           echo "matrix=$targets_json" >> $GITHUB_OUTPUT
           echo "repo_url=$REPO_URL" >> $GITHUB_OUTPUT
 
-  build:  
-    name: 构建 ${{ matrix.target }}-(${{ matrix.arch }})  
-    runs-on: ubuntu-latest  
-    needs: matrix  
-    strategy:  
-      matrix: 
+  build:
+    name: 构建 ${{ matrix.target }}-(${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    needs: matrix
+    strategy:
+      matrix:
         target: ${{ fromJson(needs.matrix.outputs.matrix) }}
         arch: ["${{ github.event.inputs.Arch }}"]
-      fail-fast: false  
+      fail-fast: false
+    
     env:
       REPO_URL: ${{ needs.matrix.outputs.repo_url }}
 
-    steps:  
-    - name: 检出代码  
-      uses: actions/checkout@v4  
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
 
-    - name: 加载环境  
-      env:  
-        DEBIAN_FRONTEND: noninteractive  
-      run: |  
-        sudo apt-get update -qq  
-        sudo apt-get install -qq --no-install-recommends \
-          build-essential clang llvm flex g++ gawk gcc-multilib gettext \
-          git libncurses5-dev libssl-dev python3 python3-pyelftools python3-setuptools \
-          rsync unzip zstd zlib1g-dev jq subversion qemu-utils ccache \
-          libelf-dev device-tree-compiler libgmp3-dev libmpc-dev  
-        sudo apt-get autoremove --purge -qq  
-        sudo rm -rf /var/lib/apt/lists/*  
-        sudo timedatectl set-timezone "Asia/Shanghai"  
-        git clone --depth=1 https://github.com/openwrt-dev/po2lmo  
-        (cd po2lmo && sudo make && sudo make install)  
+      - name: 加载环境
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq --no-install-recommends \
+            build-essential clang llvm flex g++ gawk gcc-multilib gettext \
+            git libncurses5-dev libssl-dev python3 python3-pyelftools python3-setuptools \
+            rsync unzip zstd zlib1g-dev jq subversion qemu-utils ccache \
+            libelf-dev device-tree-compiler libgmp3-dev libmpc-dev  
+          sudo apt-get autoremove --purge -qq
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo timedatectl set-timezone "Asia/Shanghai"
+          git clone --depth=1 https://github.com/openwrt-dev/po2lmo
+          (cd po2lmo && sudo make && sudo make install)
 
-    - name: 设置变量  
-      id: ENV  
-      run: |  
-        echo "date=$(date +'%m.%d')" >> $GITHUB_ENV  
-        echo "arch_path=$(echo ${{ matrix.arch }} | tr '/' '-')" >> $GITHUB_ENV
-      
-    - name: 准备SDK  
-      run: |  
-        SDK_URL1="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/${{ matrix.arch }}/immortalwrt-sdk-24.10-SNAPSHOT-${{ env.arch_path }}_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
-        SDK_URL2="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/${{ matrix.arch }}/immortalwrt-sdk-24.10-SNAPSHOT-${{ env.arch_path }}_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
-        wget --spider -q "$SDK_URL1" && wget "$SDK_URL1" || wget "$SDK_URL2"
-        mkdir OpenWrt-${{ env.arch_path }} && tar -I 'zstd -d' -xf immortalwrt-*.tar.zst -C OpenWrt-${{ env.arch_path }} --strip-components 1 && rm immortalwrt-*.tar.zst 
+      - name: 设置变量
+        id: ENV
+        run: |
+          echo "date=$(date +'%m.%d')" >> $GITHUB_ENV
+          echo "arch_path=$(echo ${{ matrix.arch }} | tr '/' '-')" >> $GITHUB_ENV
 
-    - name: 克隆项目  
-      run: |  
-        cp -rf App/. OpenWrt-${{ env.arch_path }}/  
-        cd OpenWrt-${{ env.arch_path }}
-        ./scripts/feeds update -a
-        rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
-        rm -Rf feeds/luci/modules/!(luci-base)
-        rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
-        rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
-        rm -Rf feeds/packages/net/!(mosquitto|curl)
-        rm -Rf feeds/base/package/firmware
-        rm -Rf feeds/base/package/network/!(services|utils)
-        rm -Rf feeds/base/package/network/services/!(ppp)
-        rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
-        rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
-        # 根据仓库类型处理路径
-        if [[ "$REPO_URL" == *"kiddin9"* ]]; then
-          git clone -b main $REPO_URL packages
-          mv packages/* package/
-          rm -rf {packages,.github,.gitignore,LICENSE,README.md}
-        else
-          git clone -b lede $REPO_URL packages 
-          mv packages/* package/
-          rm -rf {packages,package/golang}
-        fi
-        
-        ./scripts/feeds update -a                 
-        ./scripts/feeds install ${{ matrix.target }} 
-        
-        if [ -f "package/${{ matrix.target }}/Makefile" ]; then  
-          echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config  
-        else  
-          echo "::error::包 ${{ matrix.target }} 最终不存在于仓库中"  
-          exit 1  
-        fi  
-    
-    - name: 下载依赖  
-      id: package  
-      run: |  
-        cd OpenWrt-${{ env.arch_path }}
-        mv -f feeds/base feeds/base.bak
-        mv -f feeds/packages feeds/packages.bak
-        make defconfig
-        rm -Rf feeds/base
-        mv -f feeds/base.bak feeds/base
-        mv -f feeds/packages.bak feeds/packages
-        make -j$(nproc) download 
-        
-    - name: 开始编译  
-      run: |   
-        cd OpenWrt-${{ env.arch_path }}  
-        make package/${{ matrix.target }}/compile -j$(nproc) V=s  
-        
-    - name: 准备 ipk  
-      run: |  
-        cd OpenWrt-${{ env.arch_path }}  
-        mkdir -p ./artifact/IPK  
-        find ./bin/packages/*/*/ -maxdepth 1 -type f -name "*.ipk" | xargs -i mv -f {} ./artifact/IPK/  
-        cd ./artifact/IPK  
-        echo "IPK=$PWD" >> $GITHUB_ENV  
-        
-    - name: 上传 ipk  
-      uses: actions/upload-artifact@v4  
-      id: upipk  
-      with:  
-        name: ${{ env.date }} (${{ env.arch_path }})-${{ matrix.target }}
-        path: ${{ env.IPK }}
+      - name: 准备SDK
+        run: |
+          SDK_URL1="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/${{ matrix.arch }}/immortalwrt-sdk-24.10-SNAPSHOT-${{ env.arch_path }}_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
+          SDK_URL2="https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/${{ matrix.arch }}/immortalwrt-sdk-24.10-SNAPSHOT-${{ env.arch_path }}_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
+          wget --spider -q "$SDK_URL1" && wget "$SDK_URL1" || wget "$SDK_URL2"
+          mkdir OpenWrt-${{ env.arch_path }} && tar -I 'zstd -d' -xf immortalwrt-*.tar.zst -C OpenWrt-${{ env.arch_path }} --strip-components 1 && rm immortalwrt-*.tar.zst
+
+      - name: 克隆项目
+        run: |
+          cp -rf App/. OpenWrt-${{ env.arch_path }}/
+          cd OpenWrt-${{ env.arch_path }}
+          ./scripts/feeds update -a
+          rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
+          rm -Rf feeds/luci/modules/!(luci-base)
+          rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
+          rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
+          rm -Rf feeds/packages/net/!(mosquitto|curl)
+          rm -Rf feeds/base/package/firmware
+          rm -Rf feeds/base/package/network/!(services|utils)
+          rm -Rf feeds/base/package/network/services/!(ppp)
+          rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
+          rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
+          
+          # 根据仓库类型处理路径
+          if [[ "$REPO_URL" == *"kiddin9"* ]]; then
+            git clone -b main $REPO_URL packages
+            mv packages/* package/
+            rm -rf {packages,.github,.gitignore,LICENSE,README.md}
+          else
+            git clone -b lede $REPO_URL packages 
+            mv packages/* package/
+            rm -rf {packages,package/golang}
+          fi
+          
+          ./scripts/feeds update -a
+          ./scripts/feeds install ${{ matrix.target }}
+          
+          if [ -f "package/${{ matrix.target }}/Makefile" ]; then
+            echo "CONFIG_PACKAGE_${{ matrix.target }}=y" >> .config
+          else
+            echo "::error::包 ${{ matrix.target }} 最终不存在于仓库中"
+            exit 1
+          fi
+
+      - name: 下载依赖
+        id: package
+        run: |
+          cd OpenWrt-${{ env.arch_path }}
+          mv -f feeds/base feeds/base.bak
+          mv -f feeds/packages feeds/packages.bak
+          make defconfig
+          rm -Rf feeds/base
+          mv -f feeds/base.bak feeds/base
+          mv -f feeds/packages.bak feeds/packages
+          make -j$(nproc) download
+
+      - name: 开始编译
+        run: |
+          cd OpenWrt-${{ env.arch_path }}
+          make package/${{ matrix.target }}/compile -j$(nproc) V=s
+
+      - name: 准备 ipk
+        run: |
+          cd OpenWrt-${{ env.arch_path }}
+          mkdir -p ./artifact/IPK
+          find ./bin/packages/*/*/ -maxdepth 1 -type f -name "*.ipk" | xargs -i mv -f {} ./artifact/IPK/
+          cd ./artifact/IPK
+          echo "IPK=$PWD" >> $GITHUB_ENV
+
+      - name: 上传 ipk
+        uses: actions/upload-artifact@v4
+        id: upipk
+        with:
+          name: ${{ env.date }} (${{ env.arch_path }})-${{ matrix.target }}
+          path: ${{ env.IPK }}
