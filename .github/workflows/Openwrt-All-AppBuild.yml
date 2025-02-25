@@ -14,18 +14,7 @@ on:
         description: '选择架构'
         default: 'x86/64'
         type: choice
-        options: [
-          'x86/64', 'ipq40xx/generic', 'ipq806x/generic',
-          'ramips/mt7620', 'ramips/mt7621', 'ramips/mt76x8',
-          'ramips/rt288x', 'ramips/rt305x', 'ramips/rt3883',
-          'ath79/generic', 'sunxi/cortexa7', 'sunxi/cortexa8',
-          'sunxi/cortexa53', 'bcm27xx/bcm2708', 'bcm27xx/bcm2709',
-          'bcm27xx/bcm2710', 'bcm27xx/bcm2711', 'bcm27xx/bcm2712',
-          'bcm47xx/generic', 'mediatek/mt7622', 'mediatek/mt7623',
-          'mediatek/mt7629', 'lantiq/xrx200', 'rockchip/armv8',
-          'mvebu/cortexa9', 'realtek/rtl838x', 'realtek/rtl839x',
-          'realtek/rtl930x', 'realtek/rtl931x', 'zynq/generic'
-        ]
+        options: ['x86/64', 'ipq40xx/generic', 'ipq806x/generic', 'ramips/mt7620', 'ramips/mt7621', 'ramips/mt76x8', 'ramips/rt288x', 'ramips/rt305x', 'ramips/rt3883', 'ath79/generic', 'sunxi/cortexa7', 'sunxi/cortexa8', 'sunxi/cortexa53', 'bcm27xx/bcm2708', 'bcm27xx/bcm2709', 'bcm27xx/bcm2710', 'bcm27xx/bcm2711', 'bcm27xx/bcm2712', 'bcm47xx/generic', 'mediatek/mt7622', 'mediatek/mt7623', 'mediatek/mt7629', 'lantiq/xrx200', 'rockchip/armv8', 'mvebu/cortexa9', 'realtek/rtl838x', 'realtek/rtl839x', 'realtek/rtl930x', 'realtek/rtl931x', 'zynq/generic']
       Package:
         description: '输入要构建的包名 (例如: luci-app-adguardhome)'
         required: false
@@ -143,17 +132,17 @@ jobs:
         run: |
           cp -rf App/. OpenWrt-${{ env.arch_path }}/
           cd OpenWrt-${{ env.arch_path }}
-          ./scripts/feeds update -a
-          rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
-          rm -Rf feeds/luci/modules/!(luci-base)
-          rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
-          rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
-          rm -Rf feeds/packages/net/!(mosquitto|curl)
-          rm -Rf feeds/base/package/firmware
-          rm -Rf feeds/base/package/network/!(services|utils)
-          rm -Rf feeds/base/package/network/services/!(ppp)
-          rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
-          rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
+          #./scripts/feeds update -a
+          #rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
+          #rm -Rf feeds/luci/modules/!(luci-base)
+          #rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
+          #rm -Rf feeds/packages/multimedia/!(gstreamer1|ffmpeg)
+          #rm -Rf feeds/packages/net/!(mosquitto|curl)
+          #rm -Rf feeds/base/package/firmware
+          #rm -Rf feeds/base/package/network/!(services|utils)
+          #rm -Rf feeds/base/package/network/services/!(ppp)
+          #rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
+          #rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
           
           # 根据仓库类型处理路径
           if [[ "$REPO_URL" == *"kiddin9"* ]]; then
