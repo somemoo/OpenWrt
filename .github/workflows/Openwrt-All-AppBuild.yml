@@ -158,7 +158,7 @@ jobs:
             rm -rf {packages,package/golang}
           fi
           
-          for ipk in $(find feeds/kiddin9/* -maxdepth 0 -type d);
+          for ipk in $(find package/* -maxdepth 0 -type d);
           do
              [[ "$(grep "KernelPackage" "$ipk/Makefile")" && ! "$(grep "BuildPackage" "$ipk/Makefile")" ]] && rm -rf $ipk || true
           done
