@@ -92,9 +92,8 @@ jobs:
       matrix:
         target: ${{ fromJson(needs.matrix.outputs.matrix) }}
       fail-fast: false
+    
     steps:
-      - run: echo "正在构建：${{ matrix.target }}"
-
       - name: 检出代码
         uses: actions/checkout@main
         with:
