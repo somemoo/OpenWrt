@@ -1,6 +1,6 @@
 # 编译状态
 
-![Openwrt-AutoBuild](https://github.com/somemoo/OpenWrt/workflows/Openwrt-Firmware-Build/badge.svg)
+[![Openwrt-Firmware-Build](https://github.com/somemoo/OpenWrt/actions/workflows/Openwrt-Firmware-Build.yml/badge.svg)](https://github.com/somemoo/OpenWrt/actions/workflows/Openwrt-Firmware-Build.yml)
 [![](https://img.shields.io/github/release-pre/somemoo/OpenWrt.svg)](https://github.com/somemoo/OpenWrt/releases)
 [![](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/somemoo/OpenWrt)
 
