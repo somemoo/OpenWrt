@@ -24,7 +24,7 @@ on:
       ARCH:
         description: '输入架构 (例如: x86-64,ac58u)'
         required: true
-        default: 'x86-64'
+        default: ''
         type: string
         
   schedule:
@@ -56,24 +56,34 @@ jobs:
       - name: 构建矩阵
         id: set-matrix
         run: |
-          if [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
-            echo "处理 Build-OpenWrt 文件..."
-            TARGETS=$(tr ',; ' '\n' < Build-OpenWrt | awk '{
-              gsub(/[ \t]+/, "");    # 移除所有空格
-              gsub(/#.*/, "");       # 移除行内注释
-              if ($0 !~ /^#/ && $0 != "") { 
-                print tolower($0) 
-              }
-            }' | sort -u | jq -R . | jq -s .)
-            echo "matrix=$TARGETS" >> $GITHUB_OUTPUT
+          FIREWARM_ARRAY=()
+          ARCH_INPUT="${{ github.event.inputs.ARCH }}"
+          if [[ -n "$ARCH_INPUT" ]]; then
+            IFS=',; ' read -ra parts <<< "$ARCH_INPUT"
+            for part in "${parts[@]}"; do
+              clean_part=$(echo "$part" | xargs)
+              [[ -n "$clean_part" ]] && FIREWARM_ARRAY+=("$clean_part")
+            done
+          elif [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
+            while IFS= read -r line; do
+              [[ "$line" =~ ^[[:space:]]*# || -z "${line// }" ]] && continue
+              IFS=',; ' read -ra parts <<< "$line"
+              for part in "${parts[@]}"; do
+                clean_part=$(echo "$part" | xargs)
+                [[ -n "$clean_part" ]] && FIREWARM_ARRAY+=("$clean_part")
+              done
+            done < Build-OpenWrt
           else
-            echo "使用输入参数..."
-            REPO_INPUT="${{ github.event.inputs.REPO }}"
-            ARCH_INPUT="${{ github.event.inputs.ARCH }}"
-            ARCH_CLEAN=$(echo "$ARCH_INPUT" | tr ',; ' '\n' | awk '{gsub(/[ \t]+/, ""); print}' | sort -u)
-            JSON_MATRIX=$(jq -cn --arg repo "$REPO_INPUT" --argjson archs "$(echo "$ARCH_CLEAN" | jq -R . | jq -s .)" '$archs | map("\($repo)-\(.)")' )
-            echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
+            echo "::error::错误：没有提供ARCH输入且Build-OpenWrt文件不存在或为空"
+            exit 1
           fi
+          FIREWARM_ARRAY=($(printf "%s\n" "${FIREWARM_ARRAY[@]}" | sort -u))
+          if [[ ${#FIREWARM_ARRAY[@]} -eq 0 ]]; then
+            echo "::error::错误：未找到有效的构建目标"
+            exit 1
+          fi
+          targets_json=$(jq -c -n --argjson arr "$(printf '%s\n' "${FIREWARM_ARRAY[@]}" | jq -R . | jq -s .)" '$arr')
+          echo "matrix=$targets_json" >> $GITHUB_OUTPUT
 
   build:
     name: 构建 ${{ matrix.target }}
