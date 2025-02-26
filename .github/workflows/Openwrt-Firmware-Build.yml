@@ -88,15 +88,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 准备构建
-        run: |
-          echo "正在构建目标: ${{ matrix.target }}"
-          IFS='-' read -ra TARGET <<< "${{ matrix.target }}"
-          REPO_NAME="${TARGET}"
-          ARCH_NAME="${TARGET}"
-          echo "仓库: $REPO_NAME"
-          echo "架构: $ARCH_NAME"
-
       - name: 配置变量
         run: |
           echo "FILE_NAME=${{ matrix.target }}" >> $GITHUB_ENV
