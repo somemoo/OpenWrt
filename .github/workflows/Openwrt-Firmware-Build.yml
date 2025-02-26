@@ -46,31 +46,34 @@ env:
 jobs:
   matrix:
     runs-on: ubuntu-latest
-    if: github.event.repository.owner.id == github.event.sender.id || !github.event.sender.id
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     
     steps:
       - name: 检出代码
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: 构建矩阵
         id: set-matrix
         run: |
           if [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
-            echo "使用 Build-OpenWrt 文件生成矩阵"
-            TARGETS=$(tr ',;' '\n' < Build-OpenWrt | awk 'NF {gsub(/ /,""); print}' | sort -u | jq -R . | jq -s .)
+            echo "处理 Build-OpenWrt 文件..."
+            TARGETS=$(tr ',; ' '\n' < Build-OpenWrt | awk '{
+              gsub(/[ \t]+/, "");
+              gsub(/#.*/, "");
+              if ($0 !~ /^#/ && $0 != "") { 
+                print tolower($0) 
+              }
+            }' | sort -u | jq -R . | jq -s .)         
             echo "matrix=$TARGETS" >> $GITHUB_OUTPUT
           else
-            echo "使用输入参数生成矩阵"
+            echo "使用输入参数..."
             REPO_INPUT="${{ github.event.inputs.REPO }}"
             ARCH_INPUT="${{ github.event.inputs.ARCH }}"
-            ARCH_ARRAY=($(echo "$ARCH_INPUT" | tr ',; ' '\n' | awk 'NF {gsub(/ /,""); print}' | sort -u))
-            PKG_ARRAY=()
-            for arch in "${ARCH_ARRAY[@]}"; do
-                PKG_ARRAY+=("${REPO_INPUT}-${arch}")
-            done
-            echo "matrix=$(jq -cn --argjson arr "$(printf '%s\n' "${PKG_ARRAY[@]}" | jq -R . | jq -s .)" '$arr')" >> $GITHUB_OUTPUT
+            ARCH_CLEAN=$(echo "$ARCH_INPUT" | tr ',; ' '\n' | awk '{gsub(/[ \t]+/, ""); print}' | sort -u)
+            JSON_MATRIX=$(jq -cn --arg repo "$REPO_INPUT" --argjson archs "$(echo "$ARCH_CLEAN" | jq -R . | jq -s .)" '$archs | map("\($repo)-\(.)")' )
+            
+            echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
           fi
 
   build:
@@ -81,8 +84,54 @@ jobs:
       matrix:
         target: ${{ fromJson(needs.matrix.outputs.matrix) }}
       fail-fast: false
-
     steps:
+      - run: echo "正在构建：${{ matrix.target }}"name: Openwrt-Firmware-Build
+
+on: [...原有触发条件...]
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 构建矩阵
+        id: set-matrix
+        run: |
+          if [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
+            echo "处理 Build-OpenWrt 文件..."
+            TARGETS=$(tr ',; ' '\n' < Build-OpenWrt | awk '{
+              gsub(/[ \t]+/, "");
+              gsub(/#.*/, "");
+              if ($0 !~ /^#/ && $0 != "") { 
+                print tolower($0) 
+              }
+            }' | sort -u | jq -R . | jq -s .)
+            echo "matrix=$TARGETS" >> $GITHUB_OUTPUT
+          else
+            echo "使用输入参数..."
+            REPO_INPUT="${{ github.event.inputs.REPO }}"
+            ARCH_INPUT="${{ github.event.inputs.ARCH }}"
+            ARCH_CLEAN=$(echo "$ARCH_INPUT" | tr ',; ' '\n' | awk '{gsub(/[ \t]+/, ""); print}' | sort -u)
+            JSON_MATRIX=$(jq -cn --arg repo "$REPO_INPUT" --argjson archs "$(echo "$ARCH_CLEAN" | jq -R . | jq -s .)" '$archs | map("\($repo)-\(.)")' )
+            echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    name: 构建 ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    needs: matrix
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.matrix.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - run: echo "正在构建：${{ matrix.target }}"
+
       - name: 检出代码
         uses: actions/checkout@main
         with:
