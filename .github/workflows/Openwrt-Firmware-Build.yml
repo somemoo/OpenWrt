@@ -23,7 +23,6 @@ on:
         options: ['lede', 'immortalwrt', 'openwrt']
       ARCH:
         description: '输入架构 (例如: x86-64,ac58u)'
-        required: true
         default: ''
         type: string
         
