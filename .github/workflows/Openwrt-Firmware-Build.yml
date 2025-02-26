@@ -51,15 +51,13 @@ jobs:
     
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
 
       - name: 构建矩阵
         id: set-matrix
         run: |
           if [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
             echo "处理 Build-OpenWrt 文件..."
-            
-            # 多分隔符处理 + 数据清洗
             TARGETS=$(tr ',; ' '\n' < Build-OpenWrt | awk '{
               gsub(/[ \t]+/, "");    # 移除所有空格
               gsub(/#.*/, "");       # 移除行内注释
@@ -67,20 +65,15 @@ jobs:
                 print tolower($0) 
               }
             }' | sort -u | jq -R . | jq -s .)
-            
             echo "matrix=$TARGETS" >> $GITHUB_OUTPUT
           else
             echo "使用输入参数..."
             REPO_INPUT="${{ github.event.inputs.REPO }}"
             ARCH_INPUT="${{ github.event.inputs.ARCH }}"
-            
-            # 输入参数清洗
             ARCH_CLEAN=$(echo "$ARCH_INPUT" | tr ',; ' '\n' | awk '{gsub(/[ \t]+/, ""); print}' | sort -u)
             JSON_MATRIX=$(jq -cn --arg repo "$REPO_INPUT" --argjson archs "$(echo "$ARCH_CLEAN" | jq -R . | jq -s .)" '$archs | map("\($repo)-\(.)")' )
-            
             echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
           fi
-
 
   build:
     name: 构建 ${{ matrix.target }}
