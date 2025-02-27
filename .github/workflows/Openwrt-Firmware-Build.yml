@@ -57,30 +57,49 @@ jobs:
         run: |
           FIREWARM_ARRAY=()
           ARCH_INPUT="${{ github.event.inputs.ARCH }}"
+          REPO_SELECTED="${{ github.event.inputs.REPO }}"
+          DEFAULT_REPO="lede"
+          REPO_USED="${REPO_SELECTED:-$DEFAULT_REPO}"
+          HAS_ARCH_INPUT=false
+
           if [[ -n "$ARCH_INPUT" ]]; then
-            IFS=',; ' read -ra parts <<< "$ARCH_INPUT"
-            for part in "${parts[@]}"; do
+            HAS_ARCH_INPUT=true
+            IFS=',; ' read -ra input_parts <<< "$ARCH_INPUT"
+            for part in "${input_parts[@]}"; do
               clean_part=$(echo "$part" | xargs)
-              [[ -n "$clean_part" ]] && FIREWARM_ARRAY+=("$clean_part")
+              [[ -z "$clean_part" ]] && continue              
+              if [[ "$clean_part" =~ ^(lede|immortalwrt|openwrt) ]]; then
+                new_target="$clean_part"
+              else
+                new_target="${REPO_USED}-${clean_part}"
+              fi
+              FIREWARM_ARRAY+=("$new_target")
             done
-          elif [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
+          fi
+
+          if [[ "$HAS_ARCH_INPUT" == false ]] && [[ -f "Build-OpenWrt" && -s "Build-OpenWrt" ]]; then
             while IFS= read -r line; do
               [[ "$line" =~ ^[[:space:]]*# || -z "${line// }" ]] && continue
               IFS=',; ' read -ra parts <<< "$line"
               for part in "${parts[@]}"; do
                 clean_part=$(echo "$part" | xargs)
-                [[ -n "$clean_part" ]] && FIREWARM_ARRAY+=("$clean_part")
+                [[ -z "$clean_part" ]] && continue                
+                if [[ "$clean_part" =~ ^(lede|immortalwrt|openwrt) ]]; then
+                  new_target="$clean_part"
+                else
+                  new_target="${REPO_USED}-${clean_part}"
+                fi
+                FIREWARM_ARRAY+=("$new_target")
               done
             done < Build-OpenWrt
-          else
-            echo "::error::错误：没有提供ARCH输入且Build-OpenWrt文件不存在或为空"
-            exit 1
           fi
-          FIREWARM_ARRAY=($(printf "%s\n" "${FIREWARM_ARRAY[@]}" | sort -u))
+
           if [[ ${#FIREWARM_ARRAY[@]} -eq 0 ]]; then
             echo "::error::错误：未找到有效的构建目标"
             exit 1
           fi
+
+          FIREWARM_ARRAY=($(printf "%s\n" "${FIREWARM_ARRAY[@]}" | sort -u))
           targets_json=$(jq -c -n --argjson arr "$(printf '%s\n' "${FIREWARM_ARRAY[@]}" | jq -R . | jq -s .)" '$arr')
           echo "matrix=$targets_json" >> $GITHUB_OUTPUT
 
