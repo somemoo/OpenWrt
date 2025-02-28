@@ -227,7 +227,7 @@ jobs:
         run: |
           cd OpenWrt
           make defconfig
-          df -h
+          df -hT | grep -v 'tmpfs\|boot'
 
       - name: 编译固件
         id: compile
