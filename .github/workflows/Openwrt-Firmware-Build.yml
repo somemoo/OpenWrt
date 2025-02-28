@@ -210,10 +210,10 @@ jobs:
       - name: 配置缓存
         uses: stupidloud/cachewrtbuild@main
         with:
-          ccache: 'true'
+          ccache: true
           mixkey: ${{ matrix.target }}
           prefix: ${{ github.workspace }}/OpenWrt
-          clean: ${{ github.event.inputs.Cache == 'true' }}
+          clean: ${{ github.event.inputs.Cache }}
 
       - name: 清理文件
         run: |
