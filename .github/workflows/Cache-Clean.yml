@@ -1,4 +1,4 @@
-name: 清理缓存
+name: Cache-Clean
 
 on:
   schedule:
