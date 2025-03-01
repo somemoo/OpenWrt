@@ -1,4 +1,4 @@
-name: Cache-Clean
+name: 清理缓存
 
 on:
   schedule:
@@ -14,8 +14,8 @@ jobs:
   auto_clean:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout Projects
+      - name: 检出代码
         uses: actions/checkout@main
 
-      - name: Cache Clean
+      - name: 清理缓存
         run: gh cache delete --all
