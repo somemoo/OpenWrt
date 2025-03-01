@@ -10,12 +10,6 @@ name: Openwrt-Firmware-Build
 on:
   workflow_dispatch:
     inputs:
-      Cache:
-        description: '选择 "true" 清除缓存（默认保留缓存）'
-        required: true
-        default: 'false'
-        type: choice
-        options: ['true', 'false']
       REPO:
         description: '选择仓库'
         default: 'lede'
@@ -168,8 +162,20 @@ jobs:
           cp -rf ${{ env.REPO_NAME }} OpenWrt/
           cd OpenWrt/${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/ && echo "ARCH_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
 
+      - name: 配置缓存
+        id: ccache
+        uses: actions/cache@main
+        with:
+          key: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.ARCH_HASH}}
+          restore-keys: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}
+          path: |
+            ./OpenWrt/.ccache
+            ./OpenWrt/staging_dir/host*
+            ./OpenWrt/staging_dir/tool*
+
       - name: 更新缓存
         run: |
+          echo "${{ secrets.PAT }}" | gh auth login --with-token
           if [ -d "./OpenWrt/staging_dir" ]; then
             find "./OpenWrt/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r DIR; do
               find "$DIR" -type f -exec touch {} +
@@ -227,17 +233,6 @@ jobs:
         run: |
           cd OpenWrt
           find "${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/patches" -name "*.patch" 2>/dev/null | xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
-      
-      - name: 配置缓存
-        id: ccache
-        uses: actions/cache@main
-        with:
-          key: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.ARCH_HASH}}
-          restore-keys: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}
-          path: |
-            ./OpenWrt/.ccache
-            ./OpenWrt/staging_dir/host*
-            ./OpenWrt/staging_dir/tool*
 
       - name: 下载依赖
         run: |
