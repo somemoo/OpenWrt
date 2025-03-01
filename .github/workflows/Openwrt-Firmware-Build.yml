@@ -49,7 +49,7 @@ jobs:
       - name: 构建矩阵
         id: set-matrix
         run: |
-          FIREWARM_ARRAY=()
+          FIRMWARE_ARRAY=()
           ARCH_INPUT="${{ github.event.inputs.ARCH }}"
           REPO_SELECTED="${{ github.event.inputs.REPO }}"
           DEFAULT_REPO="lede"
@@ -67,7 +67,7 @@ jobs:
               else
                 new_target="${REPO_USED}-${clean_part}"
               fi
-              FIREWARM_ARRAY+=("$new_target")
+              FIRMWARE_ARRAY+=("$new_target")
             done
           fi
 
@@ -83,18 +83,18 @@ jobs:
                 else
                   new_target="${REPO_USED}-${clean_part}"
                 fi
-                FIREWARM_ARRAY+=("$new_target")
+                FIRMWARE_ARRAY+=("$new_target")
               done
             done < Build-OpenWrt
           fi
 
-          if [[ ${#FIREWARM_ARRAY[@]} -eq 0 ]]; then
+          if [[ ${#FIRMWARE_ARRAY[@]} -eq 0 ]]; then
             echo "::error::错误：未找到有效的构建目标"
             exit 1
           fi
 
-          FIREWARM_ARRAY=($(printf "%s\n" "${FIREWARM_ARRAY[@]}" | sort -u))
-          targets_json=$(jq -c -n --argjson arr "$(printf '%s\n' "${FIREWARM_ARRAY[@]}" | jq -R . | jq -s .)" '$arr')
+          FIRMWARE_ARRAY=($(printf "%s\n" "${FIRMWARE_ARRAY[@]}" | sort -u))
+          targets_json=$(jq -c -n --argjson arr "$(printf '%s\n' "${FIRMWARE_ARRAY[@]}" | jq -R . | jq -s .)" '$arr')
           echo "matrix=$targets_json" >> $GITHUB_OUTPUT
 
   build:
@@ -248,7 +248,7 @@ jobs:
           cd OpenWrt
           ERROR_LOG="${{ matrix.target }}_make_error.log"
           FULL_LOG="${{ matrix.target }}_full.log"
-          echo "::group::📦 多线程编译 ${{ matrix.target }}"
+          echo "::group::?? 多线程编译 ${{ matrix.target }}"
           echo "线程数: $(($(nproc)+1))"
           if { make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG"; } | grep -E -A 1 'error:|ERROR:|Error 1|cannot|Cannot|Collected errors:|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
             echo "多线程编译成功！"
@@ -257,12 +257,12 @@ jobs:
           else
             echo "多线程编译失败！"
             echo "::endgroup::"
-            echo "::group::📝 多线程错误摘要"
+            echo "::group::?? 多线程错误摘要"
             echo "以下是错误摘要（完整日志见Artifacts）："
             tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
             echo "::endgroup::"
-            echo "::warning::⚠️ 多线程编译失败，尝试单线程编译..."
-            echo "::group::🐢 单线程编译 ${{ matrix.target }}"
+            echo "::warning::?? 多线程编译失败，尝试单线程编译..."
+            echo "::group::?? 单线程编译 ${{ matrix.target }}"
             if { make -j1 V=s 2>&1 | tee "$FULL_LOG"; } | grep -E -A 1 'error:|ERROR:|Error 1|cannot|Cannot|Collected errors:|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
               echo "单线程编译成功！"
               rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
@@ -271,19 +271,19 @@ jobs:
             else
               echo "单线程编译失败！"
               echo "::endgroup::"
-              echo "::group::📝 单线程错误摘要"
+              echo "::group::?? 单线程错误摘要"
               echo "以下是错误摘要（完整日志见Artifacts）："
               tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
               echo "::endgroup::"
-              echo "::error::❌ 彻底编译失败！完整错误日志见Artifacts"
+              echo "::error::? 彻底编译失败！完整错误日志见Artifacts"
             fi
           fi
           if [ ! -e "$FULL_LOG" ]; then
             rm -rf staging_dir/toolchain-*/{initial,bin/*-lto-dump}
-            echo "::group::📊 空间使用情况"
+            echo "::group::?? 空间使用情况"
             df -hT | grep -v 'tmpfs\|boot'
             echo "::endgroup::"
-            echo "::group::✅ 构建成果"
+            echo "::group::? 构建成果"
             ls -h bin/targets/*/* || true
             echo "::endgroup::"
           else
@@ -362,14 +362,14 @@ jobs:
             else
               ERROR_LOG="未找到日志文件"
             fi
-            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
-            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志：点击展开</summary><pre>${WERROR_LOG}</pre></details>\n📝查看完整日志请下载Artifacts"
-            TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n📝错误日志：\n<pre>${TERROR_LOG}</pre>\n📝查看完整日志请下载Artifacts"
+            MSG_TITLE="? 固件 ${{ matrix.target }} 编译失败"  
+            WMSG_CONTENT="失败信息摘要：\n??编译日期：${{ env.date }}\n<details><summary>错误日志：点击展开</summary><pre>${WERROR_LOG}</pre></details>\n??查看完整日志请下载Artifacts"
+            TMSG_CONTENT="\n------\n??编译日期：${{ env.date }}\n??错误日志：\n<pre>${TERROR_LOG}</pre>\n??查看完整日志请下载Artifacts"
           else  
-            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
+            MSG_TITLE="? 固件 ${{ matrix.target }} 编译完成"  
             RELEASE_URL="${{ steps.uprelease.outputs.url }}"
-            WMSG_CONTENT="构建信息摘要：\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\\\"${RELEASE_URL}\\\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
-            TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n🔧生成目标：${{ matrix.target }}\n📥下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            WMSG_CONTENT="构建信息摘要：\n??编译日期：${{ env.date }}\n??生成目标：${{ matrix.target }}\n??下载地址：<a href=\\\"${RELEASE_URL}\\\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            TMSG_CONTENT="\n------\n??编译日期：${{ env.date }}\n??生成目标：${{ matrix.target }}\n??下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
           
           # PushPlus 通知
