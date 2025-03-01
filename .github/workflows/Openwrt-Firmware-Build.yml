@@ -25,8 +25,7 @@ on:
   watch:
     types: started
 
-permissions:
-  contents: read
+permissions: write-all
 
 env:
   REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
