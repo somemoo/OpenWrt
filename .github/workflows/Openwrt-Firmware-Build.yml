@@ -166,6 +166,27 @@ jobs:
           git clone --depth 1 $REPO_URL -b $REPO_BRANCH OpenWrt
           rsync -a ${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/files/ OpenWrt/ 2>/dev/null || :
           cp -rf ${{ env.REPO_NAME }} OpenWrt/
+          cd OpenWrt/${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/ && echo "ARCH_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
+
+      - name: 更新缓存
+        run: |
+          if [ -d "./OpenWrt/staging_dir" ]; then
+            find "./OpenWrt/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r DIR; do
+              find "$DIR" -type f -exec touch {} +
+            done
+            mkdir -p ./OpenWrt/tmp && echo "1" > ./OpenWrt/tmp/.build
+            echo "跳过toolchain！"
+          else
+            echo "缓存丢失！"
+          fi
+
+          if ${{steps.ccache.outputs.cache-hit != 'true'}}; then
+            CACHE_LIST=$(gh cache list --key "$REPO_NAME-$ARCH_NAME" | cut -f 1)
+            for CACHE_KEY in $CACHE_LIST; do
+              gh cache delete $CACHE_KEY
+            done
+            echo "缓存清理完成！"
+          fi
 
       - name: 更新feeds
         run: |
@@ -208,20 +229,15 @@ jobs:
           find "${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/patches" -name "*.patch" 2>/dev/null | xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
       
       - name: 配置缓存
-        uses: stupidloud/cachewrtbuild@main
+        id: ccache
+        uses: actions/cache@main
         with:
-          ccache: true
-          mixkey: ${{ matrix.target }}
-          prefix: ${{ github.workspace }}/OpenWrt
-          clean: ${{ github.event.inputs.Cache }}
-
-      - name: 清理文件
-        run: |
-          shopt -s extglob
-          cd OpenWrt
-          if find staging_dir -type d \( -name '*x86_*' -o -name '*aarch64_*' -o -name '*mipsel_*' -o -name '*mips_*' -o -name '*arm_*' \) -exec test -d '{}/bin' \; -print -quit; then  
-            rm -rf staging_dir/!(*x86_*|*aarch64_*|*mipsel_*|*mips_*|*arm_*|host|hostpkg) build_dir/!(*x86_*|*aarch64_*|*mipsel_*|*mips_*|*arm_*|host|hostpkg) 2>/dev/null  
-          fi
+          key: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.ARCH_HASH}}
+          restore-keys: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}
+          path: |
+            ./OpenWrt/.ccache
+            ./OpenWrt/staging_dir/host*
+            ./OpenWrt/staging_dir/tool*
 
       - name: 下载依赖
         run: |
@@ -319,11 +335,12 @@ jobs:
       - name: 上传 COM
         uses: actions/upload-artifact@v4
         continue-on-error: true
-        if: ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true' && env.COMBINED == 'true' }}
+        if: ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true' && env.COMBINED == 'true' }} || ${{ env.LOG == 'true' }}
         with:
-          name: ${{ env.date }}-${{ matrix.target }}
+          name: ${{ env.LOG == 'true' && format('{0}_full_error', matrix.target) || format('{0}-{1}', env.date, matrix.target) }}
           path: |
             firmware/*generic*
+            firmware/*_full.log
             !firmware/*ext4*
             !firmware/*efi*
             !firmware/*kernel*
@@ -338,14 +355,6 @@ jobs:
           path: |
             firmware/*efi*
             !firmware/*ext4*
-
-      - name: 错误日志
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        if: ${{ env.LOG == 'true' }}
-        with:
-          name: ${{ matrix.target }}_full_error
-          path: firmware/*_full.log
 
       - name: 消息通知
         if: always()
@@ -391,19 +400,12 @@ jobs:
               --data-urlencode "text=<b>${MSG_TITLE}</b>${TMSG_HTML}"
           fi
 
-      - name: 删除记录
-        uses: Mattraks/delete-workflow-runs@main
+      - name: 清理空间
+        uses: ophub/delete-releases-workflows@main
         with:
-          token: ${{ secrets.PAT }}
-          retain_days: 2
-          keep_minimum_runs: 1
-
-      - name: 删除发布
-        uses: dev-drprasad/delete-older-releases@master
-        continue-on-error: true
-        if: ${{ env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' }}
-        with:
-          keep_latest: 5
+          gh_token: ${{secrets.GITHUB_TOKEN}}
+          workflows_keep_day: 2
+          releases_keep_latest: 6
+          delete_releases: true
           delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          delete_workflows: true
