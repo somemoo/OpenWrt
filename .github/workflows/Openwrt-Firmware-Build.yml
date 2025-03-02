@@ -345,7 +345,7 @@ jobs:
         continue-on-error: true
         if: ${{ env.UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT == 'true' && env.EFI == 'true' }} || ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'false' && env.LOG == 'true' }}
         with:
-          name: ${{ env.LOG == 'true' && format('{0}_full_error', matrix.target) || format('{0}-{1}_{2}', env.date, matrix.target),EFI }}
+          name: ${{ env.LOG == 'true' && format('{0}_full_error', matrix.target) || format('{0}-{1}_EFI', env.date, matrix.target) }}
           path: |
             firmware/*efi*
             firmware/*_full.log
