@@ -185,7 +185,7 @@ jobs:
           fi
 
           if ${{steps.ccache.outputs.cache-hit != 'true'}}; then
-            CACHE_LIST=$(gh cache list --key "$REPO_NAME-$ARCH_NAME" | cut -f 1)
+            CACHE_LIST=$(gh cache list --key "${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.ARCH_HASH}}" | cut -f 1)
             for CACHE_KEY in $CACHE_LIST; do
               gh cache delete $CACHE_KEY
             done
