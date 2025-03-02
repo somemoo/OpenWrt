@@ -29,8 +29,6 @@ permissions: write-all
 
 env:
   REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
-  SCKEY: ${{ secrets.SCKEY }}
-  PAT: ${{ secrets.PAT }}
   TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   TZ: Asia/Shanghai
@@ -173,6 +171,8 @@ jobs:
             ./OpenWrt/staging_dir/tool*
 
       - name: 更新缓存
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         run: |
           if [ -d "./OpenWrt/staging_dir" ]; then
             find "./OpenWrt/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r DIR; do
@@ -397,7 +397,7 @@ jobs:
       - name: 清理空间
         uses: ophub/delete-releases-workflows@main
         with:
-          gh_token: ${{secrets.GITHUB_TOKEN}}
+          gh_token: ${{secrets.REPO_TOKEN}}
           workflows_keep_day: 2
           releases_keep_latest: 6
           delete_releases: true
