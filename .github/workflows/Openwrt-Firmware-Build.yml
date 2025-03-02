@@ -398,7 +398,7 @@ jobs:
         uses: ophub/delete-releases-workflows@main
         with:
           gh_token: ${{secrets.REPO_TOKEN}}
-          workflows_keep_day: 2
+          workflows_keep_day: 1
           releases_keep_latest: 6
           delete_releases: true
           delete_tags: true
