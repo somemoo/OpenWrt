@@ -314,6 +314,7 @@ jobs:
             compgen -G "*generic*" > /dev/null && echo "COMBINED=true" >> $GITHUB_ENV
             ls
           fi
+          cd OpenWrt && make clean -j$(nproc)
 
       - name: 发布固件
         uses: softprops/action-gh-release@master
