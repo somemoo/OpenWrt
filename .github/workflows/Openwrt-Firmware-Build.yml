@@ -27,12 +27,6 @@ on:
 
 permissions: write-all
 
-env:
-  REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
-  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-  TZ: Asia/Shanghai
-
 jobs:
   matrix:
     runs-on: ubuntu-latest
@@ -154,16 +148,20 @@ jobs:
 
       - name: 克隆代码
         run: |
+          sudo mkdir -p /mnt/build_wrt
+          sudo chown $USER:$USER /mnt/build_wrt
+          sudo ln -s /mnt/build_wrt $GITHUB_WORKSPACE/OpenWrt
+          
           git clone --depth 1 $REPO_URL -b $REPO_BRANCH OpenWrt
           rsync -a ${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/files/ OpenWrt/ 2>/dev/null || :
           cp -rf ${{ env.REPO_NAME }} OpenWrt/
-          cd OpenWrt/${{ env.REPO_NAME }}/${{ env.ARCH_NAME }}/ && echo "ARCH_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
+          cd OpenWrt && echo "WRT_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
 
       - name: 配置缓存
         id: ccache
         uses: actions/cache@main
         with:
-          key: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.ARCH_HASH}}
+          key: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.WRT_HASH}}
           restore-keys: ${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}
           path: |
             ./OpenWrt/.ccache
@@ -185,7 +183,7 @@ jobs:
           fi
 
           if ${{steps.ccache.outputs.cache-hit != 'true'}}; then
-            CACHE_LIST=$(gh cache list --key "${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.ARCH_HASH}}" | cut -f 1)
+            CACHE_LIST=$(gh cache list --key "${{ env.REPO_NAME }}-${{ env.ARCH_NAME }}-${{env.WRT_HASH}}" | cut -f 1)
             for CACHE_KEY in $CACHE_LIST; do
               gh cache delete $CACHE_KEY
             done
@@ -201,14 +199,6 @@ jobs:
           sudo "${{ env.REPO_NAME }}/common/feeds-vi.sh"
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-
-      - name: 优化存储
-        run: |
-          sudo mkdir -p -m 777 /mnt/OpenWrt/dl /mnt/OpenWrt/bin /mnt/OpenWrt/staging_dir /mnt/OpenWrt/build_dir
-          ln -sfn /mnt/OpenWrt/dl OpenWrt/dl
-          ln -sfn /mnt/OpenWrt/bin OpenWrt/bin
-          ln -sfn /mnt/OpenWrt/staging_dir OpenWrt/staging_dir
-          ln -sfn /mnt/OpenWrt/build_dir OpenWrt/build_dir
 
       - name: 应用配置
         run: |
@@ -246,46 +236,52 @@ jobs:
           cd OpenWrt
           ERROR_LOG="${{ matrix.target }}_make_error.log"
           FULL_LOG="${{ matrix.target }}_full.log"
-          echo "::group::?? 多线程编译 ${{ matrix.target }}"
+          
+          # 多线程编译尝试
+          echo "::group::🌀 多线程编译 ${{ matrix.target }}"
           echo "线程数: $(($(nproc)+1))"
           if { make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG"; } | grep -E -A 1 'error:|ERROR:|Error 1|cannot|Cannot|Collected errors:|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
-            echo "多线程编译成功！"
+            echo "✅ 多线程编译成功！"
             rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
             echo "::endgroup::"
           else
-            echo "多线程编译失败！"
+            echo "❌ 多线程编译失败！"
             echo "::endgroup::"
-            echo "::group::?? 多线程错误摘要"
-            echo "以下是错误摘要（完整日志见Artifacts）："
+            echo "::group::📜 错误摘要"
+            echo "以下是最后20行错误日志（完整日志见Artifacts）："
             tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
             echo "::endgroup::"
-            echo "::warning::?? 多线程编译失败，尝试单线程编译..."
-            echo "::group::?? 单线程编译 ${{ matrix.target }}"
+            echo "::warning::⚠️ 尝试单线程编译..."
+            
+            # 单线程降级编译
+            echo "::group::🐌 单线程编译 ${{ matrix.target }}"
             if { make -j1 V=s 2>&1 | tee "$FULL_LOG"; } | grep -E -A 1 'error:|ERROR:|Error 1|cannot|Cannot|Collected errors:|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
-              echo "单线程编译成功！"
+              echo "✅ 单线程编译成功！"
               rm -f "$FULL_LOG" "$ERROR_LOG" 2>/dev/null
               echo "::notice::降级编译成功！"
               echo "::endgroup::"
             else
-              echo "单线程编译失败！"
+              echo "❌ 单线程编译失败！"
               echo "::endgroup::"
-              echo "::group::?? 单线程错误摘要"
-              echo "以下是错误摘要（完整日志见Artifacts）："
+              echo "::group::📜 错误摘要"
+              echo "以下是最后20行错误日志："
               tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
               echo "::endgroup::"
-              echo "::error::? 彻底编译失败！完整错误日志见Artifacts"
+              echo "::error::❌ 彻底编译失败！请检查完整日志"
             fi
           fi
+          
+          # 编译成功后的处理
           if [ ! -e "$FULL_LOG" ]; then
-            rm -rf staging_dir/toolchain-*/{initial,bin/*-lto-dump}
-            echo "::group::?? 空间使用情况"
+            rm -rf staging_dir/toolchain-*/{initial,bin/*-lto-dump}  # 清理中间文件
+            echo "::group::💾 磁盘空间使用情况"
             df -hT | grep -v 'tmpfs\|boot'
             echo "::endgroup::"
-            echo "::group::? 构建成果"
+            echo "::group::📦 生成固件列表"
             ls -h bin/targets/*/* || true
             echo "::endgroup::"
           else
-            echo "LOG=true" >> $GITHUB_ENV
+            echo "LOG=true" >> $GITHUB_ENV  # 标记日志存在
           fi
 
       - name: 组织文件
@@ -294,16 +290,22 @@ jobs:
         run: |
           mkdir -p firmware
           if [ "$LOG" = "true" ]; then
+            # 收集编译日志
             find OpenWrt/ -maxdepth 1 \( -type f -name "*_full.log" -o -name "*_error.log" \) -exec cp -f {} ./firmware/ \; 2>/dev/null || true
             ls firmware
           else
+            # 收集固件文件
             find OpenWrt/bin/targets/ -path "*/packages/*" -o -path "*/packages" -prune -o -type f ! -name "*buildinfo" ! -name "*json" ! -name "*txt" ! -name "*manifest" -exec cp -f {} ./firmware/ \; 2>/dev/null  
             cp OpenWrt/.config  ./firmware/${{matrix.target}}.config  
             cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware    
             cd firmware  
+            # 重命名lede固件
             [ "$REPO_NAME" = "lede" ] && rename "s/openwrt/$REPO_NAME/" openwrt-*
+            # 压缩文件
             for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
+            # 清理临时压缩包
             tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
+            # 更新固件说明
             sed -i '/## 固件说明/a 1. 固件采用的分支为${{ env.REPO_NAME }}-${{ env.REPO_BRANCH }}!' release
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
@@ -325,7 +327,7 @@ jobs:
           tag_name: ${{ env.date }}-${{ matrix.target }}
           body_path: firmware/release
 
-      - name: 上传 COM
+      - name: 上传通用固件
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true' && env.COMBINED == 'true' }} || ${{ env.LOG == 'true' }}
@@ -339,7 +341,7 @@ jobs:
             !firmware/*kernel*
             !firmware/*rootfs*
 
-      - name: 上传 EFI
+      - name: 上传EFI固件
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: ${{ env.UPLOAD_EFI_FIRMWARE_FOR_ARTIFACT == 'true' && env.EFI == 'true' }} || ${{ env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'false' && env.LOG == 'true' }}
@@ -354,6 +356,7 @@ jobs:
         if: always()
         run: |
           if [ "${{ env.LOG }}" = "true" ]; then
+            # 编译失败通知
             LOG_FILE="firmware/${{ matrix.target }}_make_error.log"
             if [ -f "$LOG_FILE" ]; then
               WERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\\"/g; s/\*/\>/g; s/$/\<br><br>/')
@@ -361,17 +364,18 @@ jobs:
             else
               ERROR_LOG="未找到日志文件"
             fi
-            MSG_TITLE="? 固件 ${{ matrix.target }} 编译失败"  
-            WMSG_CONTENT="失败信息摘要：\n??编译日期：${{ env.date }}\n<details><summary>错误日志：点击展开</summary><pre>${WERROR_LOG}</pre></details>\n??查看完整日志请下载Artifacts"
-            TMSG_CONTENT="\n------\n??编译日期：${{ env.date }}\n??错误日志：\n<pre>${TERROR_LOG}</pre>\n??查看完整日志请下载Artifacts"
+            MSG_TITLE="❌ 固件 ${{ matrix.target }} 编译失败"  
+            WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志：点击展开</summary><pre>${WERROR_LOG}</pre></details>\n📁查看完整日志请下载Artifacts"
+            TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n📜错误日志：\n<pre>${TERROR_LOG}</pre>\n📁查看完整日志请下载Artifacts"
           else  
-            MSG_TITLE="? 固件 ${{ matrix.target }} 编译完成"  
+            # 编译成功通知
+            MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
             RELEASE_URL="${{ steps.uprelease.outputs.url }}"
-            WMSG_CONTENT="构建信息摘要：\n??编译日期：${{ env.date }}\n??生成目标：${{ matrix.target }}\n??下载地址：<a href=\\\"${RELEASE_URL}\\\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
-            TMSG_CONTENT="\n------\n??编译日期：${{ env.date }}\n??生成目标：${{ matrix.target }}\n??下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            WMSG_CONTENT="构建信息摘要：\n📅编译日期：${{ env.date }}\n🎯生成目标：${{ matrix.target }}\n⬇️下载地址：<a href=\\\"${RELEASE_URL}\\\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
+            TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n🎯生成目标：${{ matrix.target }}\n⬇️下载地址：<a href=\"${RELEASE_URL}\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
           fi  
           
-          # PushPlus 通知
+          # PushPlus通知
           if [ -n "${{ secrets.PUSHPLUS_TOKEN }}" ]; then
             curl -X POST \
               -H "Content-Type: application/json" \
@@ -383,9 +387,8 @@ jobs:
               http://www.pushplus.plus/send  
           fi
 
-          # Telegram 通知（使用HTML模式）
+          # Telegram通知
           if [ -n "${{ secrets.TELEGRAM_TOKEN }}" ]; then
-            # 转换换行符为HTML换行
             TMSG_HTML=$(echo -e "$TMSG_CONTENT" | sed 's/\\n/%0A/g')
             curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
               -H "Content-Type: application/x-www-form-urlencoded" \
@@ -398,8 +401,8 @@ jobs:
         uses: ophub/delete-releases-workflows@main
         with:
           gh_token: ${{secrets.REPO_TOKEN}}
-          workflows_keep_day: 1
-          releases_keep_latest: 6
-          delete_releases: true
-          delete_tags: true
-          delete_workflows: true
+          workflows_keep_day: 1     # 保留1天的工作流记录
+          releases_keep_latest: 6   # 保留6个最新Release
+          delete_releases: true     # 删除旧Release
+          delete_tags: true         # 删除关联标签
+          delete_workflows: true    # 删除旧工作流
