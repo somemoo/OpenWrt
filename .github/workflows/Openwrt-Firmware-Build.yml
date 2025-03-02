@@ -237,8 +237,7 @@ jobs:
           cd OpenWrt
           ERROR_LOG="${{ matrix.target }}_make_error.log"
           FULL_LOG="${{ matrix.target }}_full.log"
-          
-          # 多线程编译尝试
+
           echo "::group::🌀 多线程编译 ${{ matrix.target }}"
           echo "线程数: $(($(nproc)+1))"
           if { make -j$(($(nproc)+1)) V=s 2>&1 | tee "$FULL_LOG"; } | grep -E -A 1 'error:|ERROR:|Error 1|cannot|Cannot|Collected errors:|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
@@ -253,8 +252,7 @@ jobs:
             tail -n 20 "$ERROR_LOG" | sed 's/^/   /'
             echo "::endgroup::"
             echo "::warning::⚠️ 尝试单线程编译..."
-            
-            # 单线程降级编译
+
             echo "::group::🐌 单线程编译 ${{ matrix.target }}"
             if { make -j1 V=s 2>&1 | tee "$FULL_LOG"; } | grep -E -A 1 'error:|ERROR:|Error 1|cannot|Cannot|Collected errors:|check_data_file_clashes|^\* ' > "$ERROR_LOG"; then
               echo "✅ 单线程编译成功！"
@@ -271,10 +269,8 @@ jobs:
               echo "::error::❌ 彻底编译失败！请检查完整日志"
             fi
           fi
-          
-          # 编译成功后的处理
+
           if [ ! -e "$FULL_LOG" ]; then
-            rm -rf staging_dir/toolchain-*/{initial,bin/*-lto-dump}  # 清理中间文件
             echo "::group::💾 磁盘空间使用情况"
             df -hT | grep -v 'tmpfs\|boot'
             echo "::endgroup::"
@@ -291,22 +287,16 @@ jobs:
         run: |
           mkdir -p firmware
           if [ "$LOG" = "true" ]; then
-            # 收集编译日志
             find OpenWrt/ -maxdepth 1 \( -type f -name "*_full.log" -o -name "*_error.log" \) -exec cp -f {} ./firmware/ \; 2>/dev/null || true
             ls firmware
           else
-            # 收集固件文件
             find OpenWrt/bin/targets/ -path "*/packages/*" -o -path "*/packages" -prune -o -type f ! -name "*buildinfo" ! -name "*json" ! -name "*txt" ! -name "*manifest" -exec cp -f {} ./firmware/ \; 2>/dev/null  
             cp OpenWrt/.config  ./firmware/${{matrix.target}}.config  
             cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware    
             cd firmware  
-            # 重命名lede固件
             [ "$REPO_NAME" = "lede" ] && rename "s/openwrt/$REPO_NAME/" openwrt-*
-            # 压缩文件
             for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
-            # 清理临时压缩包
             tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
-            # 更新固件说明
             sed -i '/## 固件说明/a 1. 固件采用的分支为${{ env.REPO_NAME }}-${{ env.REPO_BRANCH }}!' release
             mv sha256sums ${{ matrix.target }}_sha256sums
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
@@ -358,7 +348,6 @@ jobs:
         if: always()
         run: |
           if [ "${{ env.LOG }}" = "true" ]; then
-            # 编译失败通知
             LOG_FILE="firmware/${{ matrix.target }}_make_error.log"
             if [ -f "$LOG_FILE" ]; then
               WERROR_LOG=$(tail -n 10 "$LOG_FILE" | sed 's/"/\\\"/g; s/\*/\>/g; s/$/\<br><br>/')
@@ -370,7 +359,6 @@ jobs:
             WMSG_CONTENT="失败信息摘要：\n📅编译日期：${{ env.date }}\n<details><summary>错误日志：点击展开</summary><pre>${WERROR_LOG}</pre></details>\n📁查看完整日志请下载Artifacts"
             TMSG_CONTENT="\n------\n📅编译日期：${{ env.date }}\n📜错误日志：\n<pre>${TERROR_LOG}</pre>\n📁查看完整日志请下载Artifacts"
           else  
-            # 编译成功通知
             MSG_TITLE="✅ 固件 ${{ matrix.target }} 编译完成"  
             RELEASE_URL="${{ steps.uprelease.outputs.url }}"
             WMSG_CONTENT="构建信息摘要：\n📅编译日期：${{ env.date }}\n🎯生成目标：${{ matrix.target }}\n⬇️下载地址：<a href=\\\"${RELEASE_URL}\\\">${{ matrix.target }}-${{ env.REPO_BRANCH }}</a>"
