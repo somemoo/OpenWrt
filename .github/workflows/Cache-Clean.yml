@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: 检出代码
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: 清理缓存
-        run: gh cache delete --all
+        run: |
+          gh cache delete --all 2>/dev/null || true
+
