@@ -21,7 +21,7 @@ on:
         type: string
         
   schedule:
-    - cron: "5 19 1/2 * *"
+    - cron: "5 19 * * *"
   watch:
     types: started
 
