@@ -29,7 +29,7 @@ if [ "$REPO_BRANCH" = "openwrt-23.05" ]; then
 elif [ "$REPO_BRANCH" = "openwrt-24.10" ]; then  
     sed -i 's/msgstr "UPnP IGD 和 PCP"/msgstr "UPnP服务"/g' feeds/luci/applications/luci-app-upnp/po/zh_Hans/upnp.po  
     sed -i 's/msgstr "软件包"/msgstr "软件管理"/g' feeds/luci/applications/luci-app-package-manager/po/zh_Hans/package-manager.po  
-    sed -i 's/msgstr "Vlmcsd KMS 服务器"/msgstr "KMS 服务"/g' feeds/luci/applications/luci-app-vlmcsd/po/zh_Hans/vlmcsd.po  
+    sed -i 's/msgstr "Vlmcsd KMS 服务"/msgstr "KMS 服务"/g' feeds/luci/applications/luci-app-vlmcsd/po/zh_Hans/vlmcsd.po  
 fi
 
 defaultsettings=*/*/default-settings
@@ -78,8 +78,8 @@ sed -i '/msgid "SmartDNS"/{n;s/SmartDNS/DNS 加速/;}' feeds/vi/luci-app-smartdn
 #sed -i 's/services/vpn/g'  `grep services -rl feeds/vi/luci-app-smartdns/luasrc`
 sed -i 's/services/vpn/g' feeds/vi/luci-app-smartdns/root/usr/share/luci/menu.d/luci-app-smartdns.json
 
-sed -i 's/msgstr "Lucky"/msgstr "反向代理"/g' feeds/vi/luci-app-lucky/po/zh-cn/lucky.po
-sed -i 's/services/vpn/g'  `grep services -rl feeds/vi/luci-app-lucky/luasrc`
+sed -i 's/msgstr "Lucky"/msgstr "反向代理"/g' feeds/vi/luci-app-lucky/po/zh_Hans/lucky.po
+sed -i 's/services/vpn/g'  `grep services -rl feeds/vi/luci-app-lucky`
 
 sed -i 's/Tcpdump 流量监控/流量截取/g' feeds/vi/luci-app-tcpdump/po/zh_Hans/tcpdump.po
 sed -i 's/services/control/g'  `grep services -rl feeds/vi/luci-app-oaf/luasrc`
