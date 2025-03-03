@@ -79,7 +79,8 @@ sed -i '/msgid "SmartDNS"/{n;s/SmartDNS/DNS 加速/;}' feeds/vi/luci-app-smartdn
 sed -i 's/services/vpn/g' feeds/vi/luci-app-smartdns/root/usr/share/luci/menu.d/luci-app-smartdns.json
 
 sed -i 's/msgstr "Lucky"/msgstr "反向代理"/g' feeds/vi/luci-app-lucky/po/zh_Hans/lucky.po
-sed -i 's/services/vpn/g'  `grep services -rl feeds/vi/luci-app-lucky`
+sed -i 's/services/vpn/g' feeds/vi/luci-app-lucky/root/usr/share/luci/menu.d/luci-app-lucky.json
+sed -i 's/services/vpn/g'  `grep services -rl feeds/vi/luci-app-lucky/luasrc`
 
 sed -i 's/Tcpdump 流量监控/流量截取/g' feeds/vi/luci-app-tcpdump/po/zh_Hans/tcpdump.po
 sed -i 's/services/control/g'  `grep services -rl feeds/vi/luci-app-oaf/luasrc`
