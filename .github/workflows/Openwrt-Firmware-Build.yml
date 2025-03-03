@@ -169,8 +169,8 @@ jobs:
             ./OpenWrt/staging_dir/tool*
 
       - name: 更新缓存
-        #env:
-        #  GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         run: |
           if [ -d "./OpenWrt/staging_dir" ]; then
             find "./OpenWrt/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r DIR; do
