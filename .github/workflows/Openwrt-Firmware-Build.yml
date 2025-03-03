@@ -226,7 +226,6 @@ jobs:
         run: |
           cd OpenWrt
           make defconfig -j$(nproc) && make clean -j$(nproc)
-          make download -j$(nproc)
           df -hT | grep -v 'tmpfs\|boot'
 
       - name: 编译固件
@@ -312,7 +311,7 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-        if: ${{ env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && env.FIRMWARE_STATUS == 'true' }}
+        if: ${{ secrets.REPO_TOKEN != '' && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && env.FIRMWARE_STATUS == 'true' }}
         with:
           files: firmware/*
           name: ${{ env.date }}-${{ matrix.target }}
