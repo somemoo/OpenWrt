@@ -228,7 +228,6 @@ jobs:
         run: |
           cd OpenWrt
           make defconfig -j$(nproc) && make clean -j$(nproc)
-          make download -j$(nproc)
           df -hT | grep -v 'tmpfs\|boot'
 
       - name: 编译固件
