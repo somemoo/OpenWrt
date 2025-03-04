@@ -224,9 +224,11 @@ jobs:
           find "${{ env.REPO_NAME }}/{common,${{ env.ARCH_NAME }}}/patches" -name "*.patch" 2>/dev/null | xargs -I % sh -c 'echo "应用补丁: %" && patch -p1 --no-backup-if-mismatch < % || exit 255'
 
       - name: 下载依赖
+        timeout-minutes: 10
         run: |
           cd OpenWrt
           make defconfig -j$(nproc) && make clean -j$(nproc)
+          make download -j$(nproc)
           df -hT | grep -v 'tmpfs\|boot'
 
       - name: 编译固件
