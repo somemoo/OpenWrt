@@ -251,7 +251,7 @@ jobs:
             echo "::endgroup::"
             echo "::group::📜 错误摘要"
             echo "以下是最后100行错误日志（完整日志见Artifacts）："
-            echo "::error::❌ tail -n 100 "$ERROR_LOG" | sed 's/^/   /'"
+            echo "::error::❌ %0A$(tail -n 100 "$ERROR_LOG" | sed 's/^/   /' | sed ':a;N;$!ba;s/\n/%0A/g')"
             echo "::endgroup::"
             echo "::warning::⚠️ 尝试单线程编译..."
 
@@ -266,7 +266,7 @@ jobs:
               echo "::endgroup::"
               echo "::group::📜 错误摘要"
               echo "以下是最后100行错误日志："
-              echo "::error::❌ tail -n 100 "$ERROR_LOG" | sed 's/^/   /'"
+              echo "::error::❌ %0A$(tail -n 100 "$ERROR_LOG" | sed 's/^/   /' | sed ':a;N;$!ba;s/\n/%0A/g')"
               echo "::endgroup::"
               echo "::error::❌ 彻底编译失败！请检查完整日志"
             fi
