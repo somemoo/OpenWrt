@@ -232,6 +232,7 @@ jobs:
 
       - name: 编译固件
         id: compile
+        timeout-minutes: 300
         continue-on-error: true
         run: |
           set -eo pipefail
@@ -250,7 +251,7 @@ jobs:
             echo "::endgroup::"
             echo "::group::📜 错误摘要"
             echo "以下是最后100行错误日志（完整日志见Artifacts）："
-            tail -n 100 "$ERROR_LOG" | sed 's/^/   /'
+            echo "::error::❌ tail -n 100 "$ERROR_LOG" | sed 's/^/   /'"
             echo "::endgroup::"
             echo "::warning::⚠️ 尝试单线程编译..."
 
@@ -265,7 +266,7 @@ jobs:
               echo "::endgroup::"
               echo "::group::📜 错误摘要"
               echo "以下是最后100行错误日志："
-              tail -n 100 "$ERROR_LOG" | sed 's/^/   /'
+              echo "::error::❌ tail -n 100 "$ERROR_LOG" | sed 's/^/   /'"
               echo "::endgroup::"
               echo "::error::❌ 彻底编译失败！请检查完整日志"
             fi
@@ -294,7 +295,7 @@ jobs:
             find OpenWrt/bin/targets/ -path "*/packages/*" -o -path "*/packages" -prune -o -type f ! -name "*buildinfo" ! -name "*json" ! -name "*txt" ! -name "*manifest" -exec cp -f {} ./firmware/ \; 2>/dev/null  
             cp OpenWrt/.config  ./firmware/${{matrix.target}}.config  
             cp OpenWrt/${{ env.REPO_NAME }}/release ./firmware    
-            cd firmware  
+            cd firmware && ls
             [ "$REPO_NAME" = "lede" ] && rename "s/openwrt/$REPO_NAME/" openwrt-*
             for file in *; do tar -czf "$file.tar.gz" "$file" && [ -f "$file" ] && rm -f "$file"; done
             tar -xzf sha256sums.tar.gz && tar -xzf release.tar.gz && tar -xzf ${{matrix.target}}.config.tar.gz && rm -f {sha256sums.tar.gz,release.tar.gz,${{matrix.target}}.config.tar.gz}  
@@ -304,7 +305,6 @@ jobs:
             echo "FIRMWARE_STATUS=true" >> $GITHUB_ENV
             compgen -G "*efi*" > /dev/null && echo "EFI=true" >> $GITHUB_ENV
             compgen -G "*generic*" > /dev/null && echo "COMBINED=true" >> $GITHUB_ENV
-            ls
           fi
 
       - name: 发布固件
@@ -340,7 +340,6 @@ jobs:
           name: ${{ env.LOG == 'true' && format('{0}_full_error', matrix.target) || format('{0}-{1}_EFI', env.date, matrix.target) }}
           path: |
             firmware/*efi*
-            firmware/*_full.log
             !firmware/*ext4*
 
       - name: 消息通知
