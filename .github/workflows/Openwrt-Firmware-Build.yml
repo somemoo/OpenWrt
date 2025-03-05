@@ -390,7 +390,7 @@ jobs:
         with:
           gh_token: ${{secrets.REPO_TOKEN}}
           workflows_keep_day: 1     # 保留1天的工作流记录
-          releases_keep_latest: 6   # 保留2个最新Release
+          releases_keep_latest: 2   # 保留2个最新Release
           delete_releases: true     # 删除旧Release
           delete_tags: true         # 删除关联标签
           delete_workflows: true    # 删除旧工作流
