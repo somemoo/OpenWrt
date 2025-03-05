@@ -61,6 +61,8 @@ sed -i 's/services/vpn/g' feeds/luci/applications/luci-app-unblockneteasemusic/r
 sed -i 's/services/system/g' feeds/luci/applications/luci-app-watchcat/root/usr/share/luci/menu.d/luci-app-watchcat.json
 sed -i 's/msgstr "Watchcat"/msgstr "智能重启"/g' feeds/luci/applications/luci-app-watchcat/po/zh_Hans/watchcat.po
 
+sed -i 's/msgstr "Turbo ACC 网络加速"/msgstr "网络加速"/g' feeds/luci/applications/luci-app-turboacc/po/zh-cn/turboacc.po
+
 ##--------------------------------------------------------------------------------------------------------------------------------------------##
 sed -i '/msgid "Pass Wall"/{n;s/PassWall/翻越长城/;}' feeds/vi/luci-app-passwall/po/zh_Hans/passwall.po
 sed -i '/Pass Wall/s/-1/4/g' feeds/vi/luci-app-passwall/luasrc/controller/passwall.lua
