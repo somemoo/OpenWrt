@@ -1,5 +1,6 @@
 #!/bin/bash 
 
+sed -i 's/192.168.1.1/192.168.10.1/g' package/base-files/luci2/bin/config_generate
 sed -i "s/tty\(0\|1\)::askfirst/tty\1::respawn/g" target/linux/*/base-files/etc/inittab
 sed -i '/aria2.lua/,/samba4.json/d' package/lean/default-settings/files/zzz-default-settings
 sed -i '/msgid "Hostnames"/{n;s/主机名/主机映射/;}' feeds/luci/modules/luci-base/po/zh_Hans/base.po
