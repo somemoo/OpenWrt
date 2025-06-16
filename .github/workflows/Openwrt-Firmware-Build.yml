@@ -140,8 +140,8 @@ jobs:
           sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
           sudo -E systemctl daemon-reload
           sudo -E timedatectl set-timezone "Asia/Shanghai"
-          git clone --depth=1 https://github.com/openwrt-dev/po2lmo
-          (cd po2lmo && sudo make && sudo make install)
+          #git clone --depth=1 https://github.com/openwrt-dev/po2lmo
+          #(cd po2lmo && sudo make && sudo make install)
           df -h
 
       - name: 克隆代码
